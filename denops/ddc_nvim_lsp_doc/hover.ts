@@ -1,4 +1,4 @@
-import { autocmd, Denops, fn, once } from "./deps.ts";
+import { autocmd, Denops, fn, nvimFn, once, op, vars } from "./deps.ts";
 import {
   CompleteInfo,
   CompletionItem,
@@ -9,6 +9,7 @@ import {
   SignatureResponse,
   UserData,
 } from "./types.ts";
+import { Float } from "./float.ts";
 
 const sighelpWinName = "ddc_nvim_lsp_doc_sighelp_winid";
 const docWinName = "ddc_nvim_lsp_doc_document_winid";
@@ -36,6 +37,7 @@ export function findParen(line: string): number {
 }
 
 export class Hover {
+  private float = new Float();
   private timer: number = 0;
   private prevInput = "";
 
@@ -47,7 +49,7 @@ export class Hover {
   ): Promise<void> {
     new Promise((resolve, reject) => {
       setTimeout(() => {
-        reject(new Error("timeout"))
+        reject(new Error("timeout"));
       }, 2000);
       denops.call("luaeval", `${funcName}(_A.args, _A.callback)`, {
         args: args,
@@ -56,14 +58,6 @@ export class Hover {
         })[0],
       });
     }).catch((e) => console.error("ddc_nvim_lsp_doc", e));
-  }
-
-  private async closeWin(denops: Denops, name: string): Promise<void> {
-    denops.call(
-      "luaeval",
-      "require('ddc_nvim_lsp_doc.hover').close_win(_A.arg)",
-      { arg: name },
-    );
   }
 
   private async getDecodedCompleteItem(
@@ -87,26 +81,7 @@ export class Hover {
     return decoded["lspitem"];
   }
 
-  private async makeFloatingwinSize(
-    lines: string[],
-  ): Promise<[number, number]> {
-    let maxWidth = 0;
-    lines.map((line) => maxWidth = Math.max(maxWidth, line.length));
-    return [maxWidth, lines.length];
-  }
-
-  private async showFloating(
-    denops: Denops,
-    opts: OpenFloatOptions,
-  ): Promise<void> {
-    denops.call(
-      "luaeval",
-      "require('ddc_nvim_lsp_doc.hover').show_float_win(_A.opts)",
-      { opts: opts },
-    );
-  }
-
-  private async openPreview(denops: Denops, item: CompletionItem) {
+  private async showCompleteDoc(denops: Denops, item: CompletionItem) {
     let detail = "";
     let syntax: string = "markdown";
     if (item.detail) {
@@ -129,7 +104,7 @@ export class Hover {
     } else if (detail.length) {
       arg = detail;
     } else {
-      this.closeWin(denops, docWinName);
+      this.float.closeWin(denops, docWinName);
       return;
     }
 
@@ -141,29 +116,28 @@ export class Hover {
       ) as string[],
     );
     if (!lines.length) {
-      this.closeWin(denops, docWinName);
+      this.float.closeWin(denops, docWinName);
       return;
     }
 
     const pumInfo = await denops.call("pum_getpos") as PopupPos;
     // const align = "right";
-    const [winWidth, winHeight] = await this.makeFloatingwinSize(lines);
 
     let floatingOpt: FloatOption = {
-      relative: "win",
+      relative: "editor",
       anchor: "NW",
-      width: winWidth,
-      height: winHeight,
       style: "minimal",
-      row: pumInfo.row - 1,
+      row: pumInfo.row,
       col: pumInfo.col + pumInfo.width + (pumInfo.scrollbar ? 1 : 0),
     };
-    this.showFloating(denops, {
+    this.float.showFloating(denops, {
       syntax: syntax,
       lines: lines,
       floatOpt: floatingOpt,
       events: ["InsertLeave", "CursorMovedI"],
       winName: docWinName,
+      maxWidth: await op.columns.get(denops) - pumInfo.row,
+      maxHeight: await denops.eval("&lines") as number - pumInfo.col,
     });
   }
 
@@ -173,32 +147,31 @@ export class Hover {
     col: number,
   ): Promise<void> {
     if (!info.lines) {
-      this.closeWin(denops, sighelpWinName);
+      this.float.closeWin(denops, sighelpWinName);
       return;
     }
     info.lines = trimLines(info.lines);
     if (!info.lines.length) {
-      this.closeWin(denops, sighelpWinName);
+      this.float.closeWin(denops, sighelpWinName);
       return;
     }
-    const [winWidth, winHeight] = await this.makeFloatingwinSize(info.lines);
 
     let floatingOpt: FloatOption = {
       relative: "win",
       anchor: "SW",
-      width: winWidth,
-      height: winHeight,
       style: "minimal",
       row: await fn.winline(denops) - 1,
       col: col,
     };
-    this.showFloating(denops, {
+    this.float.showFloating(denops, {
       syntax: "markdown",
       lines: info.lines,
       floatOpt: floatingOpt,
       events: ["InsertLeave"],
       winName: sighelpWinName,
       hl: info.hl,
+      maxWidth: await op.columns.get(denops),
+      maxHeight: 10,
     });
   }
 
@@ -208,12 +181,12 @@ export class Hover {
     this.timer = setTimeout(async () => {
       const decoded = await this.getDecodedCompleteItem(denops);
       if (!decoded) {
-        this.closeWin(denops, docWinName);
+        this.float.closeWin(denops, docWinName);
         return;
       }
 
       if (decoded.documentation) {
-        this.openPreview(denops, decoded);
+        this.showCompleteDoc(denops, decoded);
       } else {
         this.luaAsyncRequest(
           denops,
@@ -221,7 +194,7 @@ export class Hover {
           [decoded],
           (res: CompletionItem) => {
             if (res) {
-              this.openPreview(denops, res);
+              this.showCompleteDoc(denops, res);
             }
           },
         );
@@ -253,7 +226,7 @@ export class Hover {
         },
       );
     } else {
-      this.closeWin(denops, sighelpWinName);
+      this.float.closeWin(denops, sighelpWinName);
     }
   }
 

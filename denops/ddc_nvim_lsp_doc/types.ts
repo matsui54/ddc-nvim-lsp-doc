@@ -15,7 +15,7 @@ export type CompleteInfo = {
 
 export type UserData = {
   lspitem: CompletionItem;
-}
+};
 
 export type CompletionItem = {
   detail?: string;
@@ -35,11 +35,11 @@ export type PopupPos = {
   col: number;
   size: number;
   scrollbar: boolean;
-}
+};
 
 export type FloatOption = {
   relative?: "editor" | "win" | "cursor";
-  win?:number;
+  win?: number;
   anchor?: string;
   width?: number;
   height?: number;
@@ -50,16 +50,16 @@ export type FloatOption = {
   external?: number;
   zindex?: number;
   style?: string;
-}
+};
 
-export type SignatureHelp  = {
-	/**
+export type SignatureHelp = {
+  /**
 	 * One or more signatures. If no signatures are available the signature help
 	 * request should return `null`.
 	 */
-	signatures: SignatureInformation[];
+  signatures: SignatureInformation[];
 
-	/**
+  /**
 	 * The active signature. If omitted or the value lies outside the
 	 * range of `signatures` the value defaults to zero or is ignore if
 	 * the `SignatureHelp` as no signatures.
@@ -70,9 +70,9 @@ export type SignatureHelp  = {
 	 * In future version of the protocol this property might become
 	 * mandatory to better express this.
 	 */
-	activeSignature?: number;
+  activeSignature?: number;
 
-	/**
+  /**
 	 * The active parameter of the active signature. If omitted or the value
 	 * lies outside the range of `signatures[activeSignature].parameters`
 	 * defaults to 0 if the active signature has parameters. If
@@ -81,47 +81,46 @@ export type SignatureHelp  = {
 	 * mandatory to better express the active parameter if the
 	 * active signature does have any.
 	 */
-	activeParameter?: number;
-}
+  activeParameter?: number;
+};
 /**
  * Represents the signature of something callable. A signature
  * can have a label, like a function-name, a doc-comment, and
  * a set of parameters.
  */
 export interface SignatureInformation {
-	/**
+  /**
 	 * The label of this signature. Will be shown in
 	 * the UI.
 	 */
-	label: string;
+  label: string;
 
-	/**
+  /**
 	 * The human-readable doc-comment of this signature. Will be shown
 	 * in the UI but can be omitted.
 	 */
-	documentation?: string | MarkupContent;
+  documentation?: string | MarkupContent;
 
-	/**
+  /**
 	 * The parameters of this signature.
 	 */
-	parameters?: ParameterInformation[];
+  parameters?: ParameterInformation[];
 
-	/**
+  /**
 	 * The index of the active parameter.
 	 *
 	 * If provided, this is used in place of `SignatureHelp.activeParameter`.
 	 *
 	 * @since 3.16.0
 	 */
-	activeParameter?: number;
+  activeParameter?: number;
 }
 /**
  * Represents a parameter of a callable-signature. A parameter can
  * have a label and a doc-comment.
  */
 export interface ParameterInformation {
-
-	/**
+  /**
 	 * The label of this parameter information.
 	 *
 	 * Either a string or an inclusive start and exclusive end offsets within
@@ -133,31 +132,29 @@ export interface ParameterInformation {
 	 * signature label. Its intended use case is to highlight the parameter
 	 * label part in the `SignatureInformation.label`.
 	 */
-	label: string | [number, number];
+  label: string | [number, number];
 
-	/**
+  /**
 	 * The human-readable doc-comment of this parameter. Will be shown
 	 * in the UI but can be omitted.
 	 */
-	documentation?: string | MarkupContent;
-}
-
-export type HlRange = {
-  start: number;
-  end: number;
+  documentation?: string | MarkupContent;
 }
 
 export type SignatureResponse = {
   help?: SignatureHelp;
   lines?: string[];
-  hl?: HlRange;
-}
+  hl?: [number, number];
+};
 
 export type OpenFloatOptions = {
   syntax: string;
-  lines: string [];
+  lines: string[];
   floatOpt: FloatOption;
   events: string[];
   winName: string;
-  hl?: HlRange;
-}
+  hl?: [number, number];
+  wrapAt?: number;
+  maxWidth: number;
+  maxHeight: number;
+};
