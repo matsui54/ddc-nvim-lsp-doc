@@ -11,9 +11,6 @@ import {
 } from "./types.ts";
 import { Float } from "./float.ts";
 
-const sighelpWinName = "ddc_nvim_lsp_doc_sighelp_winid";
-const docWinName = "ddc_nvim_lsp_doc_document_winid";
-
 export function trimLines(lines: string[]): string[] {
   let start = 0;
   let end = 0;
@@ -36,10 +33,129 @@ export function findParen(line: string): number {
   return line.search(/\((([^\(\)]*)|(\([^\(\)]*\)))*$/);
 }
 
-export class Hover {
+export class DocHandler {
   private float = new Float();
+  private winName = "ddc_nvim_lsp_doc_document_winid";
+
+  async closeWin(denops: Denops) {
+    this.float.closeWin(denops, this.winName);
+  }
+
+  async showCompleteDoc(denops: Denops, item: CompletionItem) {
+    let detail = "";
+    let syntax: string = "markdown";
+    if (item.detail) {
+      detail = item.detail;
+    }
+    let arg: string | MarkupContent;
+    if (item.documentation) {
+      const doc = item.documentation;
+      if (typeof doc == "string") {
+        arg = detail + (detail.length && doc.length ? "\n---\n" : "") + doc;
+        syntax = "";
+      } else {
+        arg = {
+          kind: syntax,
+          value: detail + (detail.length && doc.value.length ? "\n---\n" : "") +
+            doc.value,
+        } as MarkupContent;
+        syntax = doc.kind;
+      }
+    } else if (detail.length) {
+      arg = detail;
+    } else {
+      this.closeWin(denops);
+      return;
+    }
+
+    const lines = trimLines(
+      await denops.call(
+        "luaeval",
+        "vim.lsp.util.convert_input_to_markdown_lines(_A.arg)",
+        { arg: arg },
+      ) as string[],
+    );
+    if (!lines.length) {
+      this.closeWin(denops);
+      return;
+    }
+
+    const pumInfo = await denops.call("pum_getpos") as PopupPos;
+    if (!pumInfo || !pumInfo.col) {
+      this.closeWin(denops);
+      return;
+    }
+    // const align = "right";
+
+    const col = pumInfo.col + pumInfo.width + (pumInfo.scrollbar ? 1 : 0);
+    const maxWidth = await op.columns.get(denops) - col;
+    let floatingOpt: FloatOption = {
+      relative: "editor",
+      anchor: "NW",
+      style: "minimal",
+      row: pumInfo.row,
+      col: col,
+    };
+    this.float.showFloating(denops, {
+      syntax: syntax,
+      lines: lines,
+      floatOpt: floatingOpt,
+      events: ["InsertLeave", "CursorMovedI"],
+      winName: this.winName,
+      maxWidth: maxWidth,
+      maxHeight: await denops.eval("&lines") as number - pumInfo.row,
+    });
+  }
+}
+
+export class SigHelpHandler {
+  private float = new Float();
+  private winName = "ddc_nvim_lsp_doc_sighelp_winid";
+
+  async closeWin(denops: Denops) {
+    this.float.closeWin(denops, this.winName);
+  }
+
+  async showSignatureHelp(
+    denops: Denops,
+    info: SignatureResponse,
+    col: number,
+  ): Promise<void> {
+    if (!info.lines || !(await fn.mode(denops) as string).startsWith("i")) {
+      this.closeWin(denops);
+      return;
+    }
+    info.lines = trimLines(info.lines);
+    if (!info.lines.length) {
+      this.closeWin(denops);
+      return;
+    }
+
+    let floatingOpt: FloatOption = {
+      relative: "win",
+      anchor: "SW",
+      style: "minimal",
+      row: await fn.winline(denops) - 1,
+      col: col,
+    };
+    this.float.showFloating(denops, {
+      syntax: "markdown",
+      lines: info.lines,
+      floatOpt: floatingOpt,
+      events: ["InsertLeave"],
+      winName: this.winName,
+      hl: info.hl,
+      maxWidth: await op.columns.get(denops),
+      maxHeight: await fn.winline(denops),
+    });
+  }
+}
+
+export class Hover {
   private timer: number = 0;
   private prevInput = "";
+  private sighelpHandler = new SigHelpHandler();
+  private docHandler = new DocHandler();
 
   private async luaAsyncRequest(
     denops: Denops,
@@ -76,114 +192,18 @@ export class Hover {
     return decoded["lspitem"];
   }
 
-  private async showCompleteDoc(denops: Denops, item: CompletionItem) {
-    let detail = "";
-    let syntax: string = "markdown";
-    if (item.detail) {
-      detail = item.detail;
-    }
-    let arg: string | MarkupContent;
-    if (item.documentation) {
-      const doc = item.documentation;
-      if (typeof doc == "string") {
-        arg = detail + (detail.length && doc.length ? "\n---\n" : "") + doc;
-        syntax = "";
-      } else {
-        arg = {
-          kind: syntax,
-          value: detail + (detail.length && doc.value.length ? "\n---\n" : "") +
-            doc.value,
-        } as MarkupContent;
-        syntax = doc.kind;
-      }
-    } else if (detail.length) {
-      arg = detail;
-    } else {
-      this.float.closeWin(denops, docWinName);
-      return;
-    }
-
-    const lines = trimLines(
-      await denops.call(
-        "luaeval",
-        "vim.lsp.util.convert_input_to_markdown_lines(_A.arg)",
-        { arg: arg },
-      ) as string[],
-    );
-    if (!lines.length) {
-      this.float.closeWin(denops, docWinName);
-      return;
-    }
-
-    const pumInfo = await denops.call("pum_getpos") as PopupPos;
-    // const align = "right";
-
-    const col = pumInfo.col + pumInfo.width + (pumInfo.scrollbar ? 1 : 0);
-    const maxWidth = await op.columns.get(denops) - col;
-    let floatingOpt: FloatOption = {
-      relative: "editor",
-      anchor: "NW",
-      style: "minimal",
-      row: pumInfo.row,
-      col: col,
-    };
-    this.float.showFloating(denops, {
-      syntax: syntax,
-      lines: lines,
-      floatOpt: floatingOpt,
-      events: ["InsertLeave", "CursorMovedI"],
-      winName: docWinName,
-      maxWidth: maxWidth,
-      maxHeight: await denops.eval("&lines") as number - pumInfo.row,
-    });
-  }
-
-  private async showSignatureHelp(
-    denops: Denops,
-    info: SignatureResponse,
-    col: number,
-  ): Promise<void> {
-    if (!info.lines || !(await fn.mode(denops) as string).startsWith("i")) {
-      this.float.closeWin(denops, sighelpWinName);
-      return;
-    }
-    info.lines = trimLines(info.lines);
-    if (!info.lines.length) {
-      this.float.closeWin(denops, sighelpWinName);
-      return;
-    }
-
-    let floatingOpt: FloatOption = {
-      relative: "win",
-      anchor: "SW",
-      style: "minimal",
-      row: await fn.winline(denops) - 1,
-      col: col,
-    };
-    this.float.showFloating(denops, {
-      syntax: "markdown",
-      lines: info.lines,
-      floatOpt: floatingOpt,
-      events: ["InsertLeave"],
-      winName: sighelpWinName,
-      hl: info.hl,
-      maxWidth: await op.columns.get(denops),
-      maxHeight: await fn.winline(denops),
-    });
-  }
-
   private async onCompleteChanged(denops: Denops): Promise<void> {
     // debounce
     clearTimeout(this.timer);
     this.timer = setTimeout(async () => {
       const decoded = await this.getDecodedCompleteItem(denops);
       if (!decoded) {
-        this.float.closeWin(denops, docWinName);
+        this.docHandler.closeWin(denops);
         return;
       }
 
       if (decoded.documentation) {
-        this.showCompleteDoc(denops, decoded);
+        this.docHandler.showCompleteDoc(denops, decoded);
       } else {
         this.luaAsyncRequest(
           denops,
@@ -191,7 +211,7 @@ export class Hover {
           [decoded],
           (res: CompletionItem) => {
             if (res) {
-              this.showCompleteDoc(denops, res);
+              this.docHandler.showCompleteDoc(denops, res);
             }
           },
         );
@@ -218,12 +238,12 @@ export class Hover {
         [],
         (res: SignatureResponse) => {
           if (res) {
-            this.showSignatureHelp(denops, res, startPos);
+            this.sighelpHandler.showSignatureHelp(denops, res, startPos);
           }
         },
       );
     } else {
-      this.float.closeWin(denops, sighelpWinName);
+      this.sighelpHandler.closeWin(denops);
     }
   }
 

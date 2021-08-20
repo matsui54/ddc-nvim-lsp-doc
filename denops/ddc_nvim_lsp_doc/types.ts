@@ -143,7 +143,7 @@ export interface ParameterInformation {
 }
 
 export type SignatureResponse = {
-  help?: SignatureHelp;
+  help: SignatureHelp;
   lines?: string[];
   hl?: [number, number];
 };
