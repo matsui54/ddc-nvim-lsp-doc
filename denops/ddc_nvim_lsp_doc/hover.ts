@@ -47,17 +47,12 @@ export class Hover {
     args: unknown[],
     callback: Function,
   ): Promise<void> {
-    new Promise((resolve, reject) => {
-      setTimeout(() => {
-        reject(new Error("timeout"));
-      }, 2000);
-      denops.call("luaeval", `${funcName}(_A.args, _A.callback)`, {
-        args: args,
-        callback: once(denops, async (response) => {
-          return resolve(callback(response));
-        })[0],
-      });
-    }).catch((e) => console.error("ddc_nvim_lsp_doc", e));
+    denops.call("luaeval", `${funcName}(_A.args, _A.callback)`, {
+      args: args,
+      callback: once(denops, async (response) => {
+        return callback(response);
+      })[0],
+    });
   }
 
   private async getDecodedCompleteItem(
@@ -123,12 +118,14 @@ export class Hover {
     const pumInfo = await denops.call("pum_getpos") as PopupPos;
     // const align = "right";
 
+    const col = pumInfo.col + pumInfo.width + (pumInfo.scrollbar ? 1 : 0);
+    const maxWidth = await op.columns.get(denops) - col;
     let floatingOpt: FloatOption = {
       relative: "editor",
       anchor: "NW",
       style: "minimal",
       row: pumInfo.row,
-      col: pumInfo.col + pumInfo.width + (pumInfo.scrollbar ? 1 : 0),
+      col: col,
     };
     this.float.showFloating(denops, {
       syntax: syntax,
@@ -136,8 +133,8 @@ export class Hover {
       floatOpt: floatingOpt,
       events: ["InsertLeave", "CursorMovedI"],
       winName: docWinName,
-      maxWidth: await op.columns.get(denops) - pumInfo.row,
-      maxHeight: await denops.eval("&lines") as number - pumInfo.col,
+      maxWidth: maxWidth,
+      maxHeight: await denops.eval("&lines") as number - pumInfo.row,
     });
   }
 
@@ -146,7 +143,7 @@ export class Hover {
     info: SignatureResponse,
     col: number,
   ): Promise<void> {
-    if (!info.lines) {
+    if (!info.lines || !(await fn.mode(denops) as string).startsWith("i")) {
       this.float.closeWin(denops, sighelpWinName);
       return;
     }
@@ -171,7 +168,7 @@ export class Hover {
       winName: sighelpWinName,
       hl: info.hl,
       maxWidth: await op.columns.get(denops),
-      maxHeight: 10,
+      maxHeight: await fn.winline(denops),
     });
   }
 

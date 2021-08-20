@@ -1,3 +1,4 @@
+import { autocmd } from "./deps.ts";
 export type VimCompleteItem = {
   word: string;
   abbr?: string;
@@ -151,7 +152,7 @@ export type OpenFloatOptions = {
   syntax: string;
   lines: string[];
   floatOpt: FloatOption;
-  events: string[];
+  events: autocmd.AutocmdEvent[];
   winName: string;
   hl?: [number, number];
   wrapAt?: number;

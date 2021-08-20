@@ -15,16 +15,13 @@ export class Float {
     opts: OpenFloatOptions,
   ): Promise<[number, number]> {
     let maxWidth = 0, height = 0;
+    lines.map((line) => maxWidth = Math.max(maxWidth, line.length));
+    const width = Math.min(maxWidth, opts.maxWidth);
     for (const line of lines) {
-      const len = line.length;
-      maxWidth = Math.max(maxWidth, len);
-      if (len > opts.maxWidth) {
-        height += Math.floor(len / opts.maxWidth);
-      } else height++;
+      height += Math.max(1, Math.floor(line.length / width));
     }
-    maxWidth = Math.min(opts.maxWidth, maxWidth);
     height = Math.min(opts.maxHeight, height);
-    return [maxWidth, height];
+    return [width, height];
   }
 
   async setBuf(
@@ -47,8 +44,6 @@ export class Float {
           opts: {
             max_height: opts.maxWidth,
             max_width: opts.maxHeight,
-            wrap_at: opts.wrapAt,
-            pad_right: 3,
           },
         },
       ) as string[];
@@ -105,7 +100,6 @@ export class Float {
         { events: opts.events, win: floatWinnr },
       );
       if (opts.hl) {
-        console.log(opts.hl);
         await nvimFn.nvim_buf_add_highlight(
           denops,
           floatBufnr,
@@ -116,10 +110,5 @@ export class Float {
         );
       }
     });
-    // denops.call(
-    //   "luaeval",
-    //   "require('ddc_nvim_lsp_doc.hover').show_float_win(_A.opts)",
-    //   { opts: opts },
-    // );
   }
 }
