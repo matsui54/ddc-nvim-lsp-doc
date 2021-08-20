@@ -4,14 +4,15 @@ import {
   CompletionItem,
   FloatOption,
   MarkupContent,
-  OpenFloatOptions,
   PopupPos,
+  SignatureHelp,
   SignatureResponse,
   UserData,
 } from "./types.ts";
 import { Float } from "./float.ts";
 
-export function trimLines(lines: string[]): string[] {
+export function trimLines(lines: string[] | undefined): string[] {
+  if (!lines) return [];
   let start = 0;
   let end = 0;
   for (let i = 0; i < lines.length; i++) {
@@ -111,9 +112,28 @@ export class DocHandler {
 export class SigHelpHandler {
   private float = new Float();
   private winName = "ddc_nvim_lsp_doc_sighelp_winid";
+  private prevItem: SignatureHelp = {} as SignatureHelp;
+  private prevBuf: number = -1;
+  private prevWin: number = -1;
+
+  onInsertEnter() {
+    this.prevItem = {} as SignatureHelp;
+    this.prevWin = -1;
+    this.prevBuf = -1;
+  }
 
   async closeWin(denops: Denops) {
     this.float.closeWin(denops, this.winName);
+  }
+
+  isSameSignature(item: SignatureHelp) {
+    if (!this.prevItem || !this.prevItem.signatures) return false;
+    return this.prevItem.signatures[0].label == item.signatures[0].label;
+  }
+
+  isSamePosition(item: SignatureHelp) {
+    return item.activeSignature == this.prevItem.activeSignature &&
+      item.activeParameter == this.prevItem.activeParameter;
   }
 
   async showSignatureHelp(
@@ -121,15 +141,25 @@ export class SigHelpHandler {
     info: SignatureResponse,
     col: number,
   ): Promise<void> {
-    if (!info.lines || !(await fn.mode(denops) as string).startsWith("i")) {
-      this.closeWin(denops);
-      return;
-    }
     info.lines = trimLines(info.lines);
-    if (!info.lines.length) {
+    if (
+      !info.lines.length || !(await fn.mode(denops) as string).startsWith("i")
+    ) {
       this.closeWin(denops);
       return;
     }
+
+    if (this.isSameSignature(info.help)) {
+      if (this.isSamePosition(info.help)) {
+        return;
+      } else {
+        if (this.prevBuf != -1) {
+          this.float.changeHighlight(denops, this.prevBuf, info.hl);
+          return;
+        }
+      }
+    }
+    this.prevItem = info.help;
 
     let floatingOpt: FloatOption = {
       relative: "win",
@@ -138,11 +168,11 @@ export class SigHelpHandler {
       row: await fn.winline(denops) - 1,
       col: col,
     };
-    this.float.showFloating(denops, {
+    [this.prevBuf, this.prevWin] = await this.float.showFloating(denops, {
       syntax: "markdown",
       lines: info.lines,
       floatOpt: floatingOpt,
-      events: ["InsertLeave"],
+      events: ["InsertLeave", "CursorMoved"],
       winName: this.winName,
       hl: info.hl,
       maxWidth: await op.columns.get(denops),
@@ -168,7 +198,7 @@ export class Hover {
       callback: once(denops, async (response) => {
         return callback(response);
       })[0],
-    });
+    }).catch((e) => console.error(e));
   }
 
   private async getDecodedCompleteItem(
@@ -252,6 +282,7 @@ export class Hover {
       this.onCompleteChanged(denops);
     } else if (event == "InsertEnter") {
       this.onInsertEnter(denops);
+      this.sighelpHandler.onInsertEnter();
     } else if (event == "TextChangedI" || event == "TextChangedP") {
       this.onTextChanged(denops);
     }

@@ -24,6 +24,37 @@ export class Float {
     return [width, height];
   }
 
+  private async getNamespace(denops: Denops): Promise<number> {
+    return await nvimFn.nvim_create_namespace(
+      denops,
+      "ddc_nvim_lsp_doc",
+    ) as number;
+  }
+
+  async changeHighlight(
+    denops: Denops,
+    bufNr: number,
+    newHl: [number, number] | undefined,
+  ) {
+    await nvimFn.nvim_buf_clear_namespace(
+      denops,
+      bufNr,
+      await this.getNamespace(denops),
+      0,
+      -1,
+    );
+    if (newHl) {
+      await nvimFn.nvim_buf_add_highlight(
+        denops,
+        bufNr,
+        await this.getNamespace(denops),
+        "LspSignatureActiveParameter",
+        0,
+        ...newHl,
+      );
+    }
+  }
+
   async setBuf(
     denops: Denops,
     opts: OpenFloatOptions,
@@ -65,7 +96,7 @@ export class Float {
   async showFloating(
     denops: Denops,
     opts: OpenFloatOptions,
-  ): Promise<void> {
+  ): Promise<[number, number]> {
     const [floatBufnr, width, height] = await this.setBuf(denops, opts);
     opts.floatOpt.width = width;
     opts.floatOpt.height = height;
@@ -75,9 +106,10 @@ export class Float {
       floatBufnr,
       false,
       opts.floatOpt,
-    );
+    ) as number;
     await this.closeWin(denops, opts.winName);
 
+    const nsId = await this.getNamespace(denops);
     batch(denops, async (denops) => {
       vars.buffers.set(denops, opts.winName, floatWinnr);
       if (opts.syntax == "markdown") {
@@ -103,12 +135,13 @@ export class Float {
         await nvimFn.nvim_buf_add_highlight(
           denops,
           floatBufnr,
-          -1,
+          nsId,
           "LspSignatureActiveParameter",
           0,
           ...opts.hl,
         );
       }
     });
+    return [floatBufnr, floatWinnr];
   }
 }
