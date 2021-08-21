@@ -35,11 +35,10 @@ export function findParen(line: string): number {
 }
 
 export class DocHandler {
-  private float = new Float();
-  private winName = "ddc_nvim_lsp_doc_document_winid";
+  private float = new Float("doc");
 
   async closeWin(denops: Denops) {
-    this.float.closeWin(denops, this.winName);
+    this.float.closeWin(denops);
   }
 
   async showCompleteDoc(denops: Denops, item: CompletionItem) {
@@ -71,9 +70,8 @@ export class DocHandler {
 
     const lines = trimLines(
       await denops.call(
-        "luaeval",
-        "vim.lsp.util.convert_input_to_markdown_lines(_A.arg)",
-        { arg: arg },
+        "ddc_nvim_lsp_doc#helper#normalize_markdown",
+        arg,
       ) as string[],
     );
     if (!lines.length) {
@@ -102,7 +100,6 @@ export class DocHandler {
       lines: lines,
       floatOpt: floatingOpt,
       events: ["InsertLeave", "CursorMovedI"],
-      winName: this.winName,
       maxWidth: maxWidth,
       maxHeight: await denops.eval("&lines") as number - pumInfo.row,
     });
@@ -110,8 +107,7 @@ export class DocHandler {
 }
 
 export class SigHelpHandler {
-  private float = new Float();
-  private winName = "ddc_nvim_lsp_doc_sighelp_winid";
+  private float = new Float("sighelp");
   private prevItem: SignatureHelp = {} as SignatureHelp;
   private prevBuf: number = -1;
   private prevWin: number = -1;
@@ -123,7 +119,7 @@ export class SigHelpHandler {
   }
 
   async closeWin(denops: Denops) {
-    this.float.closeWin(denops, this.winName);
+    this.float.closeWin(denops);
   }
 
   isSameSignature(item: SignatureHelp) {
@@ -154,7 +150,7 @@ export class SigHelpHandler {
         return;
       } else {
         if (this.prevBuf != -1) {
-          this.float.changeHighlight(denops, this.prevBuf, info.hl);
+          // this.float.changeHighlight(denops, this.prevBuf, info.hl);
           return;
         }
       }
@@ -168,12 +164,11 @@ export class SigHelpHandler {
       row: await fn.winline(denops) - 1,
       col: col,
     };
-    [this.prevBuf, this.prevWin] = await this.float.showFloating(denops, {
+    await this.float.showFloating(denops, {
       syntax: "markdown",
       lines: info.lines,
       floatOpt: floatingOpt,
       events: ["InsertLeave", "CursorMoved"],
-      winName: this.winName,
       hl: info.hl,
       maxWidth: await op.columns.get(denops),
       maxHeight: await fn.winline(denops),

@@ -153,9 +153,11 @@ export type OpenFloatOptions = {
   lines: string[];
   floatOpt: FloatOption;
   events: autocmd.AutocmdEvent[];
-  winName: string;
   hl?: [number, number];
-  wrapAt?: number;
+  kind?: WinKind;
   maxWidth: number;
   maxHeight: number;
 };
+
+export type WinKind = "doc" | "sighelp";
+
