@@ -18,3 +18,6 @@ https://github.com/Shougo/ddc-nvim-lsp
 ## Install
 
 ## Configuration
+``` vim
+call ddc_nvim_lsp_doc#enable()
+```
