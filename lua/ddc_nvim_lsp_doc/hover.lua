@@ -37,9 +37,19 @@ local close_win = function(win_name)
   end
 end
 
+local get_capabilities = function()
+  for id, client in pairs(vim.lsp.buf_get_clients()) do
+    if client.resolved_capabilities then
+      return client.resolved_capabilities
+    end
+  end
+  return nil
+end
+
 return {
   is_lsp_active = is_lsp_active,
   get_resolved_item = get_resolved_item,
   get_signature_help = get_signature_help,
   close_win = close_win,
+  get_capabilities = get_capabilities,
 }

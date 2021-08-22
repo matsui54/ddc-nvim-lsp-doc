@@ -11,6 +11,11 @@ import {
 } from "./types.ts";
 import { Float } from "./float.ts";
 
+export type Capabilities = {
+  signature_help: boolean;
+  signature_help_trigger_characters: string[];
+};
+
 export function trimLines(lines: string[] | undefined): string[] {
   if (!lines) return [];
   let start = 0;
@@ -186,6 +191,7 @@ export class Hover {
   private prevInput = "";
   private sighelpHandler = new SigHelpHandler();
   private docHandler = new DocHandler();
+  private clientCapabilities: Capabilities = {} as Capabilities;
 
   private async luaAsyncRequest(
     denops: Denops,
@@ -222,6 +228,13 @@ export class Hover {
     return decoded["lspitem"];
   }
 
+  private async getCapabilities(denops: Denops) {
+    this.clientCapabilities = await denops.call(
+      "luaeval",
+      "require('ddc_nvim_lsp_doc.hover').get_capabilities()",
+    ) as Capabilities;
+  }
+
   private async onCompleteChanged(denops: Denops): Promise<void> {
     // debounce
     clearTimeout(this.timer);
@@ -249,11 +262,13 @@ export class Hover {
     }, 100);
   }
 
-  private async onInsertEnter(_denops: Denops): Promise<void> {
+  private async onInsertEnter(denops: Denops): Promise<void> {
     this.prevInput = "";
+    await this.getCapabilities(denops);
   }
 
   private async onTextChanged(denops: Denops): Promise<void> {
+    if (!this.clientCapabilities.signature_help) return;
     const cursorCol = await fn.col(denops, ".");
     const line = await fn.getline(denops, ".");
     const input = line.slice(0, cursorCol - 1);
@@ -278,13 +293,18 @@ export class Hover {
   }
 
   async onEvent(denops: Denops, event: autocmd.AutocmdEvent): Promise<void> {
-    if (event == "CompleteChanged") {
-      this.onCompleteChanged(denops);
-    } else if (event == "InsertEnter") {
+    if (event == "InsertEnter") {
       this.onInsertEnter(denops);
       this.sighelpHandler.onInsertEnter();
-    } else if (event == "TextChangedI" || event == "TextChangedP") {
-      this.onTextChanged(denops);
+    } else {
+      if (!this.clientCapabilities) {
+        await this.getCapabilities(denops);
+      }
+      if (event == "CompleteChanged") {
+        this.onCompleteChanged(denops);
+      } else if (event == "TextChangedI" || event == "TextChangedP") {
+        this.onTextChanged(denops);
+      }
     }
   }
 }
