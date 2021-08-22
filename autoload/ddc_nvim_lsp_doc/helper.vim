@@ -6,6 +6,7 @@ let s:FloatingWindow = vital#ddc_nvim_lsp_doc#import('VS.Vim.Window.FloatingWind
 function! s:init() abort
   let s:doc_win = s:FloatingWindow.new()
   let s:sighelp_win = s:FloatingWindow.new()
+  let s:match = -1
   call s:doc_win.set_bufnr(s:Buffer.create())
   call s:sighelp_win.set_bufnr(s:Buffer.create())
   call setbufvar(s:doc_win.get_bufnr(), '&buflisted', 0)
@@ -52,8 +53,12 @@ function! ddc_nvim_lsp_doc#helper#show_floating(opts) abort
   call win.set_bufnr(s:Buffer.create())
   let bufnr = win.get_bufnr()
   call setbufline(bufnr, 1, opts.lines)
+  if s:match != -1
+    call matchdelete(s:match)
+    let s:match = -1
+  endif
   if opts.syntax == 'markdown'
-    call s:Buffer.do(bufnr, { -> s:Markdown.apply({ 'text': getline('^', '$') }) })
+    call s:Buffer.do(bufnr, { -> s:apply_highlight(opts) })
   endif
   call setbufvar(bufnr, '&modified', 0)
   call setbufvar(bufnr, '&buflisted', 0)
@@ -79,9 +84,15 @@ function! ddc_nvim_lsp_doc#helper#show_floating(opts) abort
     execute printf("autocmd %s <buffer> ++once call ddc_nvim_lsp_doc#helper#close_floating({'kind': '%s'})",
           \ join(opts.events, ','), opts.kind)
   endif
-  if has_key(opts, 'hl')
-    call matchaddpos('LspSignatureActiveParameter', [2, opts.hl[0] + 1, opts.hl[1]-opts.hl[0] + 1])
-  endif
 endfunction
 
 call s:init()
+
+function! s:apply_highlight(opts) abort
+  let opts = a:opts
+  call s:Markdown.apply({ 'text': getline('^', '$') })
+  if has_key(opts, 'hl')
+    echomsg opts.hl
+    let s:match = matchaddpos('LspSignatureActiveParameter', [[2, opts.hl[0] + 1, opts.hl[1]-opts.hl[0] + 1]])
+  endif
+endfunction
