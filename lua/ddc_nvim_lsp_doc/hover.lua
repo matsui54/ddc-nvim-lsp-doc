@@ -39,8 +39,8 @@ end
 
 local get_capabilities = function()
   for id, client in pairs(vim.lsp.buf_get_clients()) do
-    if client.resolved_capabilities then
-      return client.resolved_capabilities
+    if client.server_capabilities then
+      return client.server_capabilities
     end
   end
   return nil

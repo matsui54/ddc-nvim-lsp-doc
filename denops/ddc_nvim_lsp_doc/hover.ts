@@ -11,10 +11,14 @@ import {
 import { Float } from "./float.ts";
 import { Logger } from "./logger.ts";
 
-export type Capabilities = {
-  signature_help?: boolean;
-  signature_help_trigger_characters?: string[];
-};
+interface ServerCapabilities {
+	signatureHelpProvider?: SignatureHelpOptions;
+}
+
+export type SignatureHelpOptions = {
+	triggerCharacters?: string[];
+	retriggerCharacters?: string[];
+}
 
 export function trimLines(lines: string[] | undefined): string[] {
   if (!lines) return [];
@@ -203,7 +207,7 @@ export class EventHandler {
   private prevInput = "";
   private sighelpHandler = new SigHelpHandler();
   private docHandler = new DocHandler();
-  private clientCapabilities = {} as Capabilities;
+  private capabilities = {} as ServerCapabilities;
   private selected = -1;
 
   private async getDecodedCompleteItem(
@@ -229,10 +233,10 @@ export class EventHandler {
   }
 
   private async getCapabilities(denops: Denops) {
-    this.clientCapabilities = await denops.call(
+    this.capabilities = await denops.call(
       "luaeval",
       "require('ddc_nvim_lsp_doc.hover').get_capabilities()",
-    ) as Capabilities;
+    ) as ServerCapabilities;
   }
 
   private async onCompleteChanged(denops: Denops): Promise<void> {
@@ -263,7 +267,7 @@ export class EventHandler {
   }
 
   private async onTextChanged(denops: Denops): Promise<void> {
-    if (!this.clientCapabilities || !this.clientCapabilities.signature_help) {
+    if (!this.capabilities || !this.capabilities.signatureHelpProvider) {
       return;
     }
     const cursorCol = await fn.col(denops, ".");
@@ -289,7 +293,7 @@ export class EventHandler {
       this.onInsertEnter(denops);
       this.sighelpHandler.onInsertEnter();
     } else {
-      if (!this.clientCapabilities) {
+      if (!this.capabilities) {
         await this.getCapabilities(denops);
       }
       if (event == "CompleteChanged") {
