@@ -1,8 +1,11 @@
 import { autocmd, batch, Denops, vars } from "./deps.ts";
-import { Hover } from "./hover.ts";
+import { DocResponce, EventHandler, SighelpResponce } from "./hover.ts";
+import { Logger } from "./logger.ts";
+
+export type ResponceType = "doc" | "sighelp";
 
 export async function main(denops: Denops) {
-  const hover = new Hover();
+  const handler = new EventHandler();
 
   denops.dispatcher = {
     async enable(_): Promise<void> {
@@ -11,7 +14,16 @@ export async function main(denops: Denops) {
 
     async onEvent(arg1: unknown): Promise<void> {
       const event = arg1 as autocmd.AutocmdEvent;
-      hover.onEvent(denops, event);
+      handler.onEvent(denops, event);
+    },
+
+    async respond(arg1: unknown, arg2: unknown): Promise<void> {
+      const type = arg1 as ResponceType;
+      if (type == "doc") {
+        handler.onDocResponce(denops, arg2 as DocResponce);
+      } else {
+        handler.onSighelpResponce(denops, arg2 as SighelpResponce);
+      }
     },
   };
 

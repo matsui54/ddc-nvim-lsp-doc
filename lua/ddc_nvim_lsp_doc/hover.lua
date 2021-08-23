@@ -5,35 +5,35 @@ local is_lsp_active = function()
   return #vim.lsp.get_active_clients() == 0
 end
 
-local respond = function(callback, item)
-  api.nvim_call_function('denops#request', {'ddc_nvim_lsp_doc', callback, {item}})
+local respond = function(type, item)
+  api.nvim_call_function('denops#notify', {'ddc_nvim_lsp_doc', 'respond', {type, item}})
+            -- `call denops#notify('${denops.name}', 'onEvent',["${event}"])`,
 end
 
-local get_resolved_item = function(arg, callback)
-  local item = arg[1]
+local get_resolved_item = function(arg)
+  local item = arg.decoded
   vim.lsp.buf_request(0, 'completionItem/resolve', item, function(_, _, res)
     if res then
     -- print(vim.inspect(res))
-      respond(callback, res)
+      respond("doc", {item = res, selected = arg.selected})
     end
   end)
 end
 
-local get_signature_help = function(_, callback)
+local get_signature_help = function(arg)
   local params = vim.lsp.util.make_position_params()
   vim.lsp.buf_request(0, "textDocument/signatureHelp", params, function(_, _, res)
     if res then
       local ft = api.nvim_buf_get_option(0, 'filetype')
       local converted, hl = vim.lsp.util.convert_signature_help_to_markdown_lines(res, ft)
-      respond(callback, {help = res, lines = converted, hl = hl})
+      respond("sighelp", {help = res, lines = converted, hl = hl, startpos = arg.col})
     end
   end)
 end
 
-local close_win = function(win_name)
-  local existing_float = vim.b[win_name]
-  if existing_float and api.nvim_win_is_valid(existing_float) then
-    api.nvim_win_close(existing_float, true)
+local close_win = function(winid)
+  if winid ~= -1 and api.nvim_win_is_valid(winid) then
+    api.nvim_win_close(winid, true)
   end
 end
 

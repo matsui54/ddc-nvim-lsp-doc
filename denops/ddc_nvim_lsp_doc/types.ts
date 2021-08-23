@@ -142,12 +142,6 @@ export interface ParameterInformation {
   documentation?: string | MarkupContent;
 }
 
-export type SignatureResponse = {
-  help: SignatureHelp;
-  lines?: string[];
-  hl?: [number, number];
-};
-
 export type OpenFloatOptions = {
   syntax: string;
   lines: string[];

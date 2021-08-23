@@ -9,6 +9,7 @@ export class Float {
     if (await this.winExists(denops)) {
       await nvimFn.nvim_win_close(denops, this.winid, true);
     }
+    this.winid = -1;
   }
 
   async winExists(denops: Denops): Promise<boolean> {

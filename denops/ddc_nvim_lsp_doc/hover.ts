@@ -6,10 +6,10 @@ import {
   MarkupContent,
   PopupPos,
   SignatureHelp,
-  SignatureResponse,
   UserData,
 } from "./types.ts";
 import { Float } from "./float.ts";
+import { Logger } from "./logger.ts";
 
 export type Capabilities = {
   signature_help?: boolean;
@@ -35,6 +35,8 @@ export function trimLines(lines: string[] | undefined): string[] {
   return lines.slice(start, end);
 }
 
+// TODO: support commit character
+// ex: [ ",", "(", "<" ]
 export function findParen(line: string): number {
   return line.search(/\((([^\(\)]*)|(\([^\(\)]*\)))*$/);
 }
@@ -133,15 +135,16 @@ export class SigHelpHandler {
   }
 
   isSamePosition(item: SignatureHelp) {
-    return item.activeSignature == this.prevItem.activeSignature &&
+    const isSame = item.activeSignature == this.prevItem.activeSignature &&
       item.activeParameter == this.prevItem.activeParameter;
+    return isSame;
   }
 
   async showSignatureHelp(
     denops: Denops,
-    info: SignatureResponse,
-    col: number,
+    info: SighelpResponce,
   ): Promise<void> {
+    const col = info.startpos;
     info.lines = trimLines(info.lines);
     if (
       !info.lines.length || !(await fn.mode(denops) as string).startsWith("i")
@@ -155,6 +158,7 @@ export class SigHelpHandler {
         return;
       } else {
         this.float.changeHighlight(denops, info.hl);
+        this.prevItem = info.help;
         return;
       }
     }
@@ -180,27 +184,27 @@ export class SigHelpHandler {
   }
 }
 
-export class Hover {
+export type DocResponce = {
+  item: CompletionItem;
+  selected: number;
+};
+
+export type SighelpResponce = {
+  item: CompletionItem;
+  selected: number;
+  help: SignatureHelp;
+  lines?: string[];
+  hl?: [number, number];
+  startpos: number;
+};
+
+export class EventHandler {
   private timer: number = 0;
   private prevInput = "";
   private sighelpHandler = new SigHelpHandler();
   private docHandler = new DocHandler();
-  private clientCapabilities: Capabilities = {} as Capabilities;
+  private clientCapabilities = {} as Capabilities;
   private selected = -1;
-
-  private async luaAsyncRequest(
-    denops: Denops,
-    funcName: string,
-    args: unknown[],
-    callback: Function,
-  ): Promise<void> {
-    denops.call("luaeval", `${funcName}(_A.args, _A.callback)`, {
-      args: args,
-      callback: once(denops, async (response) => {
-        return callback(response);
-      })[0],
-    }).catch((e) => console.error(e));
-  }
 
   private async getDecodedCompleteItem(
     denops: Denops,
@@ -220,6 +224,7 @@ export class Hover {
     if (!item.user_data || typeof item.user_data !== "string") return null;
     const decoded = JSON.parse(item.user_data) as UserData;
     if (!decoded["lspitem"]) return null;
+    this.selected = info.selected;
     return decoded["lspitem"];
   }
 
@@ -243,18 +248,13 @@ export class Hover {
       if (decoded.documentation) {
         this.docHandler.showCompleteDoc(denops, decoded);
       } else {
-        this.luaAsyncRequest(
-          denops,
-          "require('ddc_nvim_lsp_doc.hover').get_resolved_item",
-          [decoded],
-          (res: CompletionItem) => {
-            if (res) {
-              this.docHandler.showCompleteDoc(denops, res);
-            }
-          },
+        denops.call(
+          "luaeval",
+          "require('ddc_nvim_lsp_doc.hover').get_resolved_item(_A.arg)",
+          { arg: { decoded: decoded } },
         );
       }
-    }, 20);
+    }, 50);
   }
 
   private async onInsertEnter(denops: Denops): Promise<void> {
@@ -274,15 +274,10 @@ export class Hover {
     const startPos = findParen(input);
     if (startPos != -1) {
       this.prevInput = input;
-      this.luaAsyncRequest(
-        denops,
-        "require('ddc_nvim_lsp_doc.hover').get_signature_help",
-        [],
-        (res: SignatureResponse) => {
-          if (res) {
-            this.sighelpHandler.showSignatureHelp(denops, res, startPos);
-          }
-        },
+      denops.call(
+        "luaeval",
+        "require('ddc_nvim_lsp_doc.hover').get_signature_help(_A.arg)",
+        { arg: { col: startPos } },
       );
     } else {
       this.sighelpHandler.closeWin(denops);
@@ -303,5 +298,15 @@ export class Hover {
         this.onTextChanged(denops);
       }
     }
+  }
+
+  async onDocResponce(denops: Denops, arg: DocResponce) {
+    if (arg.selected != this.selected) {
+      this.docHandler.showCompleteDoc(denops, arg.item);
+    }
+  }
+
+  async onSighelpResponce(denops: Denops, arg: SighelpResponce) {
+    this.sighelpHandler.showSignatureHelp(denops, arg);
   }
 }
