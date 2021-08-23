@@ -1,6 +1,5 @@
 import { autocmd, batch, Denops, vars } from "./deps.ts";
 import { DocResponce, EventHandler, SighelpResponce } from "./hover.ts";
-import { Logger } from "./logger.ts";
 
 export type ResponceType = "doc" | "sighelp";
 

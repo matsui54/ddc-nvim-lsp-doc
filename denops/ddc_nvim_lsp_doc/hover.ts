@@ -9,7 +9,6 @@ import {
   UserData,
 } from "./types.ts";
 import { Float } from "./float.ts";
-import { Logger } from "./logger.ts";
 
 interface ServerCapabilities {
 	signatureHelpProvider?: SignatureHelpOptions;
