@@ -8,6 +8,13 @@ export class Float {
     this.kind = kind;
   }
 
+  async changeHighlight(denops: Denops, hl: [number, number]): Promise<void> {
+    await denops.call("ddc_nvim_lsp_doc#helper#change_highlight", {
+      kind: this.kind,
+      hl: hl,
+    });
+  }
+
   async closeWin(denops: Denops): Promise<void> {
     await denops.call(
       "ddc_nvim_lsp_doc#helper#close_floating",

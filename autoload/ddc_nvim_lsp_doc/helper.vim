@@ -37,6 +37,15 @@ function! ddc_nvim_lsp_doc#helper#close_floating(opts) abort
   call win.close()
 endfunction
 
+function! ddc_nvim_lsp_doc#helper#change_highlight(opts) abort
+  let opts = a:opts
+  let win = s:get_win(opts.kind)
+  let current = win_getid()
+  call win_gotoid(win.get_winid())
+  let s:match = matchaddpos('LspSignatureActiveParameter', [[2, opts.hl[0] + 1, opts.hl[1]-opts.hl[0] + 1]])
+  call win_gotoid(current)
+endfunction
+
 " kind: "doc" | "sighelp"
 " syntax: string;
 " lines: string[];
@@ -53,10 +62,10 @@ function! ddc_nvim_lsp_doc#helper#show_floating(opts) abort
   call win.set_bufnr(s:Buffer.create())
   let bufnr = win.get_bufnr()
   call setbufline(bufnr, 1, opts.lines)
-  if s:match != -1
-    call matchdelete(s:match)
-    let s:match = -1
-  endif
+  " if s:match != -1
+  "   call matchdelete(s:match)
+  "   let s:match = -1
+  " endif
   if opts.syntax == 'markdown'
     call s:Buffer.do(bufnr, { -> s:apply_highlight(opts) })
   endif
@@ -74,12 +83,18 @@ function! ddc_nvim_lsp_doc#helper#show_floating(opts) abort
   if win_opts.relative == 'win'
     let win_opts.row = max([win_opts.row - size.height, 0])
   endif
-  " echomsg opts.kind opts.floatOpt.col opts.floatOpt.row
 
   call win.open(win_opts)
   call win.set_var("&conceallevel", 2)
   call win.set_var("&wrap", 1)
   call win.set_var("&foldenable", 0)
+  echomsg win.get_winid()
+  if has_key(opts, 'hl')
+    let current = win_getid()
+    call win_gotoid(win.get_winid())
+    let s:match = matchaddpos('LspSignatureActiveParameter', [[2, opts.hl[0] + 1, opts.hl[1]-opts.hl[0] + 1]])
+    call win_gotoid(current)
+  endif
   if len(opts.events)
     execute printf("autocmd %s <buffer> ++once call ddc_nvim_lsp_doc#helper#close_floating({'kind': '%s'})",
           \ join(opts.events, ','), opts.kind)
@@ -91,8 +106,4 @@ call s:init()
 function! s:apply_highlight(opts) abort
   let opts = a:opts
   call s:Markdown.apply({ 'text': getline('^', '$') })
-  if has_key(opts, 'hl')
-    echomsg opts.hl
-    let s:match = matchaddpos('LspSignatureActiveParameter', [[2, opts.hl[0] + 1, opts.hl[1]-opts.hl[0] + 1]])
-  endif
 endfunction

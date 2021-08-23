@@ -150,7 +150,7 @@ export class SigHelpHandler {
         return;
       } else {
         if (this.prevBuf != -1) {
-          // this.float.changeHighlight(denops, this.prevBuf, info.hl);
+          this.float.changeHighlight(denops, info.hl);
           return;
         }
       }
