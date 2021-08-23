@@ -2,18 +2,29 @@ import { autocmd, batch, Denops, fn, nvimFn, once, vars } from "./deps.ts";
 import { FloatOption, OpenFloatOptions, PopupPos } from "./types.ts";
 
 export class Float {
-  async closeWin(denops: Denops, name: string): Promise<void> {
-    denops.call(
-      "luaeval",
-      "require('ddc_nvim_lsp_doc.hover').close_win(_A.arg)",
-      { arg: name },
-    );
+  private winid = -1;
+  private bufnr = -1;
+
+  async closeWin(denops: Denops): Promise<void> {
+    if (await this.winExists(denops)) {
+      await nvimFn.nvim_win_close(denops, this.winid, true);
+    }
   }
 
-  async makeFloatingwinSize(
+  async winExists(denops: Denops): Promise<boolean> {
+    return this.winid != -1 &&
+      await nvimFn.nvim_win_is_valid(denops, this.winid) as boolean;
+  }
+
+  async bufExists(denops: Denops): Promise<boolean> {
+    return this.bufnr != -1 &&
+      await nvimFn.nvim_buf_is_valid(denops, this.bufnr) as boolean;
+  }
+
+  makeFloatingwinSize(
     lines: string[],
     opts: OpenFloatOptions,
-  ): Promise<[number, number]> {
+  ): [number, number] {
     let maxWidth = 0, height = 0;
     lines.map((line) => maxWidth = Math.max(maxWidth, line.length));
     const width = Math.min(maxWidth, opts.maxWidth);
@@ -33,12 +44,12 @@ export class Float {
 
   async changeHighlight(
     denops: Denops,
-    bufNr: number,
     newHl: [number, number] | undefined,
   ) {
+    if (!(await this.bufExists(denops))) return;
     await nvimFn.nvim_buf_clear_namespace(
       denops,
-      bufNr,
+      this.bufnr,
       await this.getNamespace(denops),
       0,
       -1,
@@ -46,7 +57,7 @@ export class Float {
     if (newHl) {
       await nvimFn.nvim_buf_add_highlight(
         denops,
-        bufNr,
+        this.bufnr,
         await this.getNamespace(denops),
         "LspSignatureActiveParameter",
         0,
@@ -78,7 +89,7 @@ export class Float {
           },
         },
       ) as string[];
-      [width, height] = await this.makeFloatingwinSize(contents, opts);
+      [width, height] = this.makeFloatingwinSize(contents, opts);
     } else {
       await nvimFn.nvim_buf_set_lines(
         denops,
@@ -88,7 +99,7 @@ export class Float {
         true,
         opts.lines,
       );
-      [width, height] = await this.makeFloatingwinSize(opts.lines, opts);
+      [width, height] = this.makeFloatingwinSize(opts.lines, opts);
     }
     return [floatBufnr, width, height];
   }
@@ -96,22 +107,29 @@ export class Float {
   async showFloating(
     denops: Denops,
     opts: OpenFloatOptions,
-  ): Promise<[number, number]> {
+  ): Promise<void> {
     const [floatBufnr, width, height] = await this.setBuf(denops, opts);
+    this.bufnr = floatBufnr;
     opts.floatOpt.width = width;
     opts.floatOpt.height = height;
 
-    const floatWinnr = await nvimFn.nvim_open_win(
-      denops,
-      floatBufnr,
-      false,
-      opts.floatOpt,
-    ) as number;
-    await this.closeWin(denops, opts.winName);
+    if (await this.winExists(denops)) {
+      await nvimFn.nvim_win_set_config(denops, this.winid, opts.floatOpt);
+      await nvimFn.nvim_win_set_buf(denops, this.winid, floatBufnr);
+    } else {
+      this.winid = await nvimFn.nvim_open_win(
+        denops,
+        floatBufnr,
+        false,
+        opts.floatOpt,
+      ) as number;
+    }
+    // await this.closeWin(denops, opts.winName);
 
     const nsId = await this.getNamespace(denops);
+    const floatWinnr = this.winid;
     batch(denops, async (denops) => {
-      vars.buffers.set(denops, opts.winName, floatWinnr);
+      // vars.buffers.set(denops, opts.winName, floatWinnr);
       if (opts.syntax == "markdown") {
         await nvimFn.nvim_win_set_option(denops, floatWinnr, "conceallevel", 2);
         await nvimFn.nvim_win_set_option(
@@ -132,6 +150,7 @@ export class Float {
         { events: opts.events, win: floatWinnr },
       );
       if (opts.hl) {
+        await nvimFn.nvim_buf_clear_namespace(denops, floatBufnr, nsId, 0, -1);
         await nvimFn.nvim_buf_add_highlight(
           denops,
           floatBufnr,
@@ -142,6 +161,5 @@ export class Float {
         );
       }
     });
-    return [floatBufnr, floatWinnr];
   }
 }

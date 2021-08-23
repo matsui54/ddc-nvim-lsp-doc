@@ -12,8 +12,8 @@ import {
 import { Float } from "./float.ts";
 
 export type Capabilities = {
-  signature_help: boolean;
-  signature_help_trigger_characters: string[];
+  signature_help?: boolean;
+  signature_help_trigger_characters?: string[];
 };
 
 export function trimLines(lines: string[] | undefined): string[] {
@@ -44,7 +44,7 @@ export class DocHandler {
   private winName = "ddc_nvim_lsp_doc_document_winid";
 
   async closeWin(denops: Denops) {
-    this.float.closeWin(denops, this.winName);
+    this.float.closeWin(denops);
   }
 
   async showCompleteDoc(denops: Denops, item: CompletionItem) {
@@ -118,17 +118,13 @@ export class SigHelpHandler {
   private float = new Float();
   private winName = "ddc_nvim_lsp_doc_sighelp_winid";
   private prevItem: SignatureHelp = {} as SignatureHelp;
-  private prevBuf: number = -1;
-  private prevWin: number = -1;
 
   onInsertEnter() {
     this.prevItem = {} as SignatureHelp;
-    this.prevWin = -1;
-    this.prevBuf = -1;
   }
 
   async closeWin(denops: Denops) {
-    this.float.closeWin(denops, this.winName);
+    this.float.closeWin(denops);
   }
 
   isSameSignature(item: SignatureHelp) {
@@ -158,10 +154,8 @@ export class SigHelpHandler {
       if (this.isSamePosition(info.help)) {
         return;
       } else {
-        if (this.prevBuf != -1) {
-          this.float.changeHighlight(denops, this.prevBuf, info.hl);
-          return;
-        }
+        this.float.changeHighlight(denops, info.hl);
+        return;
       }
     }
     this.prevItem = info.help;
@@ -173,7 +167,7 @@ export class SigHelpHandler {
       row: await fn.winline(denops) - 1,
       col: col,
     };
-    [this.prevBuf, this.prevWin] = await this.float.showFloating(denops, {
+    await this.float.showFloating(denops, {
       syntax: "markdown",
       lines: info.lines,
       floatOpt: floatingOpt,
@@ -192,6 +186,7 @@ export class Hover {
   private sighelpHandler = new SigHelpHandler();
   private docHandler = new DocHandler();
   private clientCapabilities: Capabilities = {} as Capabilities;
+  private selected = -1;
 
   private async luaAsyncRequest(
     denops: Denops,
@@ -259,7 +254,7 @@ export class Hover {
           },
         );
       }
-    }, 100);
+    }, 20);
   }
 
   private async onInsertEnter(denops: Denops): Promise<void> {
@@ -268,7 +263,9 @@ export class Hover {
   }
 
   private async onTextChanged(denops: Denops): Promise<void> {
-    if (!this.clientCapabilities.signature_help) return;
+    if (!this.clientCapabilities || !this.clientCapabilities.signature_help) {
+      return;
+    }
     const cursorCol = await fn.col(denops, ".");
     const line = await fn.getline(denops, ".");
     const input = line.slice(0, cursorCol - 1);
