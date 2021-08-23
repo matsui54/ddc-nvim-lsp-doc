@@ -13,3 +13,4 @@ export { ensureObject } from "https://deno.land/x/unknownutil@v0.1.1/mod.ts#^";
 export { assertEquals } from "https://deno.land/std@0.105.0/testing/asserts.ts#^";
 export { toFileUrl } from "https://deno.land/std@0.105.0/path/mod.ts#^";
 export { once } from "https://deno.land/x/denops_std@v1.7.4/anonymous/mod.ts#^";
+export * as log from "https://deno.land/std@0.105.0/log/mod.ts#^";
