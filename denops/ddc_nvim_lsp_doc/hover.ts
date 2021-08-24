@@ -11,13 +11,13 @@ import {
 import { Float } from "./float.ts";
 
 interface ServerCapabilities {
-	signatureHelpProvider?: SignatureHelpOptions;
+  signatureHelpProvider?: SignatureHelpOptions;
 }
 
 export type SignatureHelpOptions = {
-	triggerCharacters?: string[];
-	retriggerCharacters?: string[];
-}
+  triggerCharacters?: string[];
+  retriggerCharacters?: string[];
+};
 
 export function trimLines(lines: string[] | undefined): string[] {
   if (!lines) return [];
@@ -99,7 +99,14 @@ export class DocHandler {
     // const align = "right";
 
     const col = pumInfo.col + pumInfo.width + (pumInfo.scrollbar ? 1 : 0);
-    const maxWidth = await op.columns.get(denops) - col;
+    const maxWidth = Math.min(
+      await op.columns.get(denops) - col,
+      await vars.g.get(denops, "ddc_nvim_lsp_doc#max_winwidth", 80) as number,
+    );
+    const maxHeight = Math.min(
+      await denops.eval("&lines") as number - pumInfo.row,
+      await vars.g.get(denops, "ddc_nvim_lsp_doc#max_winheight", 30) as number,
+    );
     let floatingOpt: FloatOption = {
       relative: "editor",
       anchor: "NW",
@@ -114,7 +121,7 @@ export class DocHandler {
       events: ["InsertLeave", "CursorMovedI"],
       winName: this.winName,
       maxWidth: maxWidth,
-      maxHeight: await denops.eval("&lines") as number - pumInfo.row,
+      maxHeight: maxHeight,
     });
   }
 }
@@ -128,6 +135,13 @@ export class SigHelpHandler {
     this.prevItem = {} as SignatureHelp;
   }
 
+  async requestSighelp(denops: Denops, col: number) {
+    denops.call(
+      "luaeval",
+      "require('ddc_nvim_lsp_doc.hover').get_signature_help(_A.arg)",
+      { arg: { col: col } },
+    );
+  }
   async closeWin(denops: Denops) {
     this.float.closeWin(denops);
   }
@@ -239,6 +253,11 @@ export class EventHandler {
   }
 
   private async onCompleteChanged(denops: Denops): Promise<void> {
+    if (
+      !(await vars.g.get(denops, "ddc_nvim_lsp_doc#enable_documentation", 1))
+    ) {
+      return;
+    }
     // debounce
     clearTimeout(this.timer);
     this.timer = setTimeout(async () => {
@@ -263,10 +282,16 @@ export class EventHandler {
   private async onInsertEnter(denops: Denops): Promise<void> {
     this.prevInput = "";
     await this.getCapabilities(denops);
+    if (this.capabilities && this.capabilities.signatureHelpProvider) {
+      this.sighelpHandler.requestSighelp(denops, await fn.col(denops, "."));
+    }
   }
 
   private async onTextChanged(denops: Denops): Promise<void> {
-    if (!this.capabilities || !this.capabilities.signatureHelpProvider) {
+    if (
+      !(await vars.g.get(denops, "ddc_nvim_lsp_doc#enable_signaturehelp", 1) ||
+        !this.capabilities || !this.capabilities.signatureHelpProvider)
+    ) {
       return;
     }
     const cursorCol = await fn.col(denops, ".");
@@ -277,11 +302,7 @@ export class EventHandler {
     const startPos = findParen(input);
     if (startPos != -1) {
       this.prevInput = input;
-      denops.call(
-        "luaeval",
-        "require('ddc_nvim_lsp_doc.hover').get_signature_help(_A.arg)",
-        { arg: { col: startPos } },
-      );
+      this.sighelpHandler.requestSighelp(denops, startPos);
     } else {
       this.sighelpHandler.closeWin(denops);
     }

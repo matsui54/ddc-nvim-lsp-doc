@@ -42,7 +42,6 @@ g:ddc_nvim_lsp_doc#enable_signaturehelp
 		If the value of this variable is non-zero,
 		|ddc-nvim-lsp-doc| automatically shows signature help in
 		insert mode.
-		(not implemented)
 
 		Default: 1
 
@@ -51,7 +50,6 @@ g:ddc_nvim_lsp_doc#enable_documentation
 		If the value of this variable is non-zero,
 		|ddc-nvim-lsp-doc| automatically shows complete documentation
 		on |CompleteChanged|.
-		(not implemented)
 
 		Default: 1
 

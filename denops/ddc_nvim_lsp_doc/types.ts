@@ -51,6 +51,14 @@ export type FloatOption = {
   external?: number;
   zindex?: number;
   style?: string;
+  border?:
+    | "none"
+    | "single"
+    | "double"
+    | "rounded"
+    | "solid"
+    | "shadow"
+    | string[];
 };
 
 export type SignatureHelp = {
