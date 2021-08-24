@@ -109,6 +109,10 @@ export class Float {
     denops: Denops,
     opts: OpenFloatOptions,
   ): Promise<void> {
+    if (opts.maxWidth < 1 || opts.maxHeight < 1) {
+      this.closeWin(denops);
+      return;
+    }
     const [floatBufnr, width, height] = await this.setBuf(denops, opts);
     this.bufnr = floatBufnr;
     opts.floatOpt.width = width;
