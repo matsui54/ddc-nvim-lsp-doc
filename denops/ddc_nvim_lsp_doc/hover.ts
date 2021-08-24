@@ -138,7 +138,7 @@ export class SigHelpHandler {
   async requestSighelp(denops: Denops, col: number) {
     denops.call(
       "luaeval",
-      "require('ddc_nvim_lsp_doc.hover').get_signature_help(_A.arg)",
+      "require('ddc_nvim_lsp_doc.helper').get_signature_help(_A.arg)",
       { arg: { col: col } },
     );
   }
@@ -248,7 +248,7 @@ export class EventHandler {
   private async getCapabilities(denops: Denops) {
     this.capabilities = await denops.call(
       "luaeval",
-      "require('ddc_nvim_lsp_doc.hover').get_capabilities()",
+      "require('ddc_nvim_lsp_doc.helper').get_capabilities()",
     ) as ServerCapabilities;
   }
 
@@ -272,7 +272,7 @@ export class EventHandler {
       } else {
         denops.call(
           "luaeval",
-          "require('ddc_nvim_lsp_doc.hover').get_resolved_item(_A.arg)",
+          "require('ddc_nvim_lsp_doc.helper').get_resolved_item(_A.arg)",
           { arg: { decoded: decoded } },
         );
       }
