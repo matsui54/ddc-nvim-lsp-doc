@@ -51,6 +51,14 @@ export type FloatOption = {
   external?: number;
   zindex?: number;
   style?: string;
+  border?:
+    | "none"
+    | "single"
+    | "double"
+    | "rounded"
+    | "solid"
+    | "shadow"
+    | string[];
 };
 
 export type SignatureHelp = {
@@ -141,12 +149,6 @@ export interface ParameterInformation {
 	 */
   documentation?: string | MarkupContent;
 }
-
-export type SignatureResponse = {
-  help: SignatureHelp;
-  lines?: string[];
-  hl?: [number, number];
-};
 
 export type OpenFloatOptions = {
   syntax: string;

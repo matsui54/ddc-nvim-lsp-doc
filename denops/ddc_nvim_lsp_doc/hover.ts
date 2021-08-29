@@ -6,10 +6,18 @@ import {
   MarkupContent,
   PopupPos,
   SignatureHelp,
-  SignatureResponse,
   UserData,
 } from "./types.ts";
 import { Float } from "./float.ts";
+
+interface ServerCapabilities {
+  signatureHelpProvider?: SignatureHelpOptions;
+}
+
+export type SignatureHelpOptions = {
+  triggerCharacters?: string[];
+  retriggerCharacters?: string[];
+};
 
 export function trimLines(lines: string[] | undefined): string[] {
   if (!lines) return [];
@@ -30,6 +38,8 @@ export function trimLines(lines: string[] | undefined): string[] {
   return lines.slice(start, end);
 }
 
+// TODO: support commit character
+// ex: [ ",", "(", "<" ]
 export function findParen(line: string): number {
   return line.search(/\((([^\(\)]*)|(\([^\(\)]*\)))*$/);
 }
@@ -87,7 +97,14 @@ export class DocHandler {
     // const align = "right";
 
     const col = pumInfo.col + pumInfo.width + (pumInfo.scrollbar ? 1 : 0);
-    const maxWidth = await op.columns.get(denops) - col;
+    const maxWidth = Math.min(
+      await op.columns.get(denops) - col,
+      await vars.g.get(denops, "ddc_nvim_lsp_doc#max_winwidth", 80) as number,
+    );
+    const maxHeight = Math.min(
+      await denops.eval("&lines") as number - pumInfo.row,
+      await vars.g.get(denops, "ddc_nvim_lsp_doc#max_winheight", 30) as number,
+    );
     let floatingOpt: FloatOption = {
       relative: "editor",
       anchor: "NW",
@@ -101,7 +118,7 @@ export class DocHandler {
       floatOpt: floatingOpt,
       events: ["InsertLeave", "CursorMovedI"],
       maxWidth: maxWidth,
-      maxHeight: await denops.eval("&lines") as number - pumInfo.row,
+      maxHeight: maxHeight,
     });
   }
 }
@@ -109,15 +126,18 @@ export class DocHandler {
 export class SigHelpHandler {
   private float = new Float("sighelp");
   private prevItem: SignatureHelp = {} as SignatureHelp;
-  private prevBuf: number = -1;
-  private prevWin: number = -1;
 
   onInsertEnter() {
     this.prevItem = {} as SignatureHelp;
-    this.prevWin = -1;
-    this.prevBuf = -1;
   }
 
+  async requestSighelp(denops: Denops, col: number) {
+    denops.call(
+      "luaeval",
+      "require('ddc_nvim_lsp_doc.hover').get_signature_help(_A.arg)",
+      { arg: { col: col } },
+    );
+  }
   async closeWin(denops: Denops) {
     this.float.closeWin(denops);
   }
@@ -128,15 +148,16 @@ export class SigHelpHandler {
   }
 
   isSamePosition(item: SignatureHelp) {
-    return item.activeSignature == this.prevItem.activeSignature &&
+    const isSame = item.activeSignature == this.prevItem.activeSignature &&
       item.activeParameter == this.prevItem.activeParameter;
+    return isSame;
   }
 
   async showSignatureHelp(
     denops: Denops,
-    info: SignatureResponse,
-    col: number,
+    info: SighelpResponce,
   ): Promise<void> {
+    const col = info.startpos;
     info.lines = trimLines(info.lines);
     if (
       !info.lines.length || !(await fn.mode(denops) as string).startsWith("i")
@@ -149,10 +170,11 @@ export class SigHelpHandler {
       if (this.isSamePosition(info.help)) {
         return;
       } else {
-        if (this.prevBuf != -1) {
+        if (info.hl) {
           this.float.changeHighlight(denops, info.hl);
-          return;
         }
+        this.prevItem = info.help;
+        return;
       }
     }
     this.prevItem = info.help;
@@ -176,25 +198,27 @@ export class SigHelpHandler {
   }
 }
 
-export class Hover {
+export type DocResponce = {
+  item: CompletionItem;
+  selected: number;
+};
+
+export type SighelpResponce = {
+  item: CompletionItem;
+  selected: number;
+  help: SignatureHelp;
+  lines?: string[];
+  hl?: [number, number];
+  startpos: number;
+};
+
+export class EventHandler {
   private timer: number = 0;
   private prevInput = "";
   private sighelpHandler = new SigHelpHandler();
   private docHandler = new DocHandler();
-
-  private async luaAsyncRequest(
-    denops: Denops,
-    funcName: string,
-    args: unknown[],
-    callback: Function,
-  ): Promise<void> {
-    denops.call("luaeval", `${funcName}(_A.args, _A.callback)`, {
-      args: args,
-      callback: once(denops, async (response) => {
-        return callback(response);
-      })[0],
-    }).catch((e) => console.error(e));
-  }
+  private capabilities = {} as ServerCapabilities;
+  private selected = -1;
 
   private async getDecodedCompleteItem(
     denops: Denops,
@@ -214,10 +238,23 @@ export class Hover {
     if (!item.user_data || typeof item.user_data !== "string") return null;
     const decoded = JSON.parse(item.user_data) as UserData;
     if (!decoded["lspitem"]) return null;
+    this.selected = info.selected;
     return decoded["lspitem"];
   }
 
+  private async getCapabilities(denops: Denops) {
+    this.capabilities = await denops.call(
+      "luaeval",
+      "require('ddc_nvim_lsp_doc.hover').get_capabilities()",
+    ) as ServerCapabilities;
+  }
+
   private async onCompleteChanged(denops: Denops): Promise<void> {
+    if (
+      !(await vars.g.get(denops, "ddc_nvim_lsp_doc#enable_documentation", 1))
+    ) {
+      return;
+    }
     // debounce
     clearTimeout(this.timer);
     this.timer = setTimeout(async () => {
@@ -230,25 +267,30 @@ export class Hover {
       if (decoded.documentation) {
         this.docHandler.showCompleteDoc(denops, decoded);
       } else {
-        this.luaAsyncRequest(
-          denops,
-          "require('ddc_nvim_lsp_doc.hover').get_resolved_item",
-          [decoded],
-          (res: CompletionItem) => {
-            if (res) {
-              this.docHandler.showCompleteDoc(denops, res);
-            }
-          },
+        denops.call(
+          "luaeval",
+          "require('ddc_nvim_lsp_doc.hover').get_resolved_item(_A.arg)",
+          { arg: { decoded: decoded } },
         );
       }
-    }, 100);
+    }, 50);
   }
 
-  private async onInsertEnter(_denops: Denops): Promise<void> {
+  private async onInsertEnter(denops: Denops): Promise<void> {
     this.prevInput = "";
+    await this.getCapabilities(denops);
+    if (this.capabilities && this.capabilities.signatureHelpProvider) {
+      this.sighelpHandler.requestSighelp(denops, await fn.col(denops, "."));
+    }
   }
 
   private async onTextChanged(denops: Denops): Promise<void> {
+    if (
+      !(await vars.g.get(denops, "ddc_nvim_lsp_doc#enable_signaturehelp", 1) ||
+        !this.capabilities || !this.capabilities.signatureHelpProvider)
+    ) {
+      return;
+    }
     const cursorCol = await fn.col(denops, ".");
     const line = await fn.getline(denops, ".");
     const input = line.slice(0, cursorCol - 1);
@@ -257,29 +299,35 @@ export class Hover {
     const startPos = findParen(input);
     if (startPos != -1) {
       this.prevInput = input;
-      this.luaAsyncRequest(
-        denops,
-        "require('ddc_nvim_lsp_doc.hover').get_signature_help",
-        [],
-        (res: SignatureResponse) => {
-          if (res) {
-            this.sighelpHandler.showSignatureHelp(denops, res, startPos);
-          }
-        },
-      );
+      this.sighelpHandler.requestSighelp(denops, startPos);
     } else {
       this.sighelpHandler.closeWin(denops);
     }
   }
 
   async onEvent(denops: Denops, event: autocmd.AutocmdEvent): Promise<void> {
-    if (event == "CompleteChanged") {
-      this.onCompleteChanged(denops);
-    } else if (event == "InsertEnter") {
+    if (event == "InsertEnter") {
       this.onInsertEnter(denops);
       this.sighelpHandler.onInsertEnter();
-    } else if (event == "TextChangedI" || event == "TextChangedP") {
-      this.onTextChanged(denops);
+    } else {
+      if (!this.capabilities) {
+        await this.getCapabilities(denops);
+      }
+      if (event == "CompleteChanged") {
+        this.onCompleteChanged(denops);
+      } else if (event == "TextChangedI" || event == "TextChangedP") {
+        this.onTextChanged(denops);
+      }
     }
+  }
+
+  async onDocResponce(denops: Denops, arg: DocResponce) {
+    if (arg.selected != this.selected) {
+      this.docHandler.showCompleteDoc(denops, arg.item);
+    }
+  }
+
+  async onSighelpResponce(denops: Denops, arg: SighelpResponce) {
+    this.sighelpHandler.showSignatureHelp(denops, arg);
   }
 }

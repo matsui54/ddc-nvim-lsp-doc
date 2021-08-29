@@ -26,6 +26,10 @@ export class Float {
     denops: Denops,
     opts: OpenFloatOptions,
   ): Promise<void> {
+    if (opts.maxWidth < 1 || opts.maxHeight < 1) {
+      this.closeWin(denops);
+      return;
+    }
     opts.kind = this.kind;
     await denops.call("ddc_nvim_lsp_doc#helper#show_floating", opts);
   }
