@@ -23,7 +23,7 @@ end
 local get_signature_help = function(arg)
   local params = vim.lsp.util.make_position_params()
   vim.lsp.buf_request(0, "textDocument/signatureHelp", params, function(_, _, res)
-    if res then
+    if res ~= 0 then
       local ft = api.nvim_buf_get_option(0, 'filetype')
       local converted, hl = vim.lsp.util.convert_signature_help_to_markdown_lines(res, ft)
       respond("sighelp", {help = res, lines = converted, hl = hl, startpos = arg.col})
