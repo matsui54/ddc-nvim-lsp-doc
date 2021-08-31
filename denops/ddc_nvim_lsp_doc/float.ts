@@ -1,15 +1,20 @@
 import { autocmd, batch, Denops, fn, nvimFn, once, vars } from "./deps.ts";
 import { FloatOption, OpenFloatOptions, PopupPos } from "./types.ts";
+import Mutex from "./mutex.ts";
 
 export class Float {
   private winid = -1;
   private bufnr = -1;
+  private mutex = new Mutex();
 
   async closeWin(denops: Denops): Promise<void> {
+    const id = await this.mutex.acquire();
+    if (!id) return;
     if (await this.winExists(denops)) {
       await nvimFn.nvim_win_close(denops, this.winid, true);
     }
     this.winid = -1;
+    this.mutex.release(id);
   }
 
   async winExists(denops: Denops): Promise<boolean> {
@@ -47,7 +52,12 @@ export class Float {
     denops: Denops,
     newHl: [number, number] | undefined,
   ) {
-    if (!(await this.bufExists(denops))) return;
+    const id = await this.mutex.acquire();
+    if (!id) return;
+    if (!(await this.bufExists(denops))) {
+      this.mutex.release(id);
+      return;
+    }
     await nvimFn.nvim_buf_clear_namespace(
       denops,
       this.bufnr,
@@ -65,6 +75,7 @@ export class Float {
         ...newHl,
       );
     }
+    this.mutex.release(id);
   }
 
   async setBuf(
@@ -113,6 +124,10 @@ export class Float {
       this.closeWin(denops);
       return;
     }
+
+    const id = await this.mutex.acquire();
+    if (!id) return;
+
     const [floatBufnr, width, height] = await this.setBuf(denops, opts);
     this.bufnr = floatBufnr;
     opts.floatOpt.width = width;
@@ -133,7 +148,7 @@ export class Float {
 
     const nsId = await this.getNamespace(denops);
     const floatWinnr = this.winid;
-    batch(denops, async (denops) => {
+    await batch(denops, async (denops) => {
       // vars.buffers.set(denops, opts.winName, floatWinnr);
       if (opts.syntax == "markdown") {
         await nvimFn.nvim_win_set_option(denops, floatWinnr, "conceallevel", 2);
@@ -166,5 +181,6 @@ export class Float {
         );
       }
     });
+    this.mutex.release(id);
   }
 }
