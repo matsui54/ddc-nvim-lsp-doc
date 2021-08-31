@@ -44,7 +44,7 @@ export type FloatOption = {
   anchor?: string;
   width?: number;
   height?: number;
-  bufpos?: number;
+  bufpos?: [number, number];
   row?: number;
   col?: number;
   focusable?: boolean;

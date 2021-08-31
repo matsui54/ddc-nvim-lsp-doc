@@ -1,5 +1,5 @@
-import { autocmd, batch, Denops, fn, nvimFn, once, vars } from "./deps.ts";
-import { FloatOption, OpenFloatOptions, PopupPos } from "./types.ts";
+import { batch, Denops, nvimFn } from "./deps.ts";
+import { OpenFloatOptions } from "./types.ts";
 import Mutex from "./mutex.ts";
 
 export class Float {
