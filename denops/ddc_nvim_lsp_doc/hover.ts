@@ -216,7 +216,6 @@ export type SighelpResponce = {
 };
 
 export class EventHandler {
-  private timer: number = 0;
   private prevInput = "";
   private sighelpHandler = new SigHelpHandler();
   private docHandler = new DocHandler();
@@ -258,25 +257,21 @@ export class EventHandler {
     ) {
       return;
     }
-    // debounce
-    clearTimeout(this.timer);
-    this.timer = setTimeout(async () => {
-      const decoded = await this.getDecodedCompleteItem(denops);
-      if (!decoded) {
-        this.docHandler.closeWin(denops);
-        return;
-      }
+    const decoded = await this.getDecodedCompleteItem(denops);
+    if (!decoded) {
+      this.docHandler.closeWin(denops);
+      return;
+    }
 
-      if (decoded.documentation) {
-        this.docHandler.showCompleteDoc(denops, decoded);
-      } else {
-        denops.call(
-          "luaeval",
-          "require('ddc_nvim_lsp_doc.helper').get_resolved_item(_A.arg)",
-          { arg: { decoded: decoded } },
-        );
-      }
-    }, 50);
+    if (decoded.documentation) {
+      this.docHandler.showCompleteDoc(denops, decoded);
+    } else {
+      denops.call(
+        "luaeval",
+        "require('ddc_nvim_lsp_doc.helper').get_resolved_item(_A.arg)",
+        { arg: { decoded: decoded } },
+      );
+    }
   }
 
   private async onInsertEnter(denops: Denops): Promise<void> {
