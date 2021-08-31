@@ -17,17 +17,17 @@ export class Float {
     this.mutex.release(id);
   }
 
-  async winExists(denops: Denops): Promise<boolean> {
+  private async winExists(denops: Denops): Promise<boolean> {
     return this.winid != -1 &&
       await nvimFn.nvim_win_is_valid(denops, this.winid) as boolean;
   }
 
-  async bufExists(denops: Denops): Promise<boolean> {
+  private async bufExists(denops: Denops): Promise<boolean> {
     return this.bufnr != -1 &&
       await nvimFn.nvim_buf_is_valid(denops, this.bufnr) as boolean;
   }
 
-  makeFloatingwinSize(
+  private makeFloatingwinSize(
     lines: string[],
     opts: OpenFloatOptions,
   ): [number, number] {
