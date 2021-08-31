@@ -46,6 +46,7 @@ export default class Mutex {
     }
 
     if (this.isWaiting) {
+      this.isWaiting = false;
       const resolve = this.waitingResolver;
       this.currentLockHolderId = crypto.randomUUID();
       resolve(this.currentLockHolderId);
