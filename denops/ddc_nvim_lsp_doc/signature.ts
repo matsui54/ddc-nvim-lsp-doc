@@ -113,6 +113,7 @@ export class SigHelpHandler {
     let floatingOpt: FloatOption = {
       relative: "win",
       anchor: "SW",
+      style: "minimal",
       row: await fn.winline(denops) - 1,
       col: col,
     };
