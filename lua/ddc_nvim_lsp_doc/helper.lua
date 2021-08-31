@@ -26,7 +26,9 @@ local get_signature_help = function(arg)
     if res and res ~= 0 and res.signatures and res.signatures[1] then
       local ft = api.nvim_buf_get_option(0, 'filetype')
       local converted, hl = vim.lsp.util.convert_signature_help_to_markdown_lines(res, ft)
-      respond("sighelp", {help = res, lines = converted, hl = hl, startpos = arg.col})
+      respond("sighelp", {help = res, lines = converted, hl = hl})
+    else
+      respond("sighelp", {help = res})
     end
   end)
 end

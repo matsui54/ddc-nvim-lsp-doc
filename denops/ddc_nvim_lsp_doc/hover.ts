@@ -1,4 +1,4 @@
-import { autocmd, Denops, fn, nvimFn, once, op, vars } from "./deps.ts";
+import { autocmd, Denops, fn, nvimFn, op, vars } from "./deps.ts";
 import {
   CompleteInfo,
   CompletionItem,
@@ -19,6 +19,9 @@ export type SignatureHelpOptions = {
   retriggerCharacters?: string[];
 };
 
+const defaultTriggerCharacters = [",", "(", "<"];
+const triggerCloseCharacters = [")", ">"];
+
 export function trimLines(lines: string[] | undefined): string[] {
   if (!lines) return [];
   let start = 0;
@@ -38,8 +41,6 @@ export function trimLines(lines: string[] | undefined): string[] {
   return lines.slice(start, end);
 }
 
-// TODO: support commit character
-// ex: [ ",", "(", "<" ]
 export function findParen(line: string): number {
   return line.search(/\((([^\(\)]*)|(\([^\(\)]*\)))*$/);
 }
@@ -135,11 +136,11 @@ export class SigHelpHandler {
     this.prevItem = {} as SignatureHelp;
   }
 
-  async requestSighelp(denops: Denops, col: number) {
+  async requestSighelp(denops: Denops) {
     denops.call(
       "luaeval",
       "require('ddc_nvim_lsp_doc.helper').get_signature_help(_A.arg)",
-      { arg: { col: col } },
+      { arg: {} },
     );
   }
   async closeWin(denops: Denops) {
@@ -161,7 +162,7 @@ export class SigHelpHandler {
     denops: Denops,
     info: SighelpResponce,
   ): Promise<void> {
-    const col = info.startpos;
+    const col = await fn.col(denops, ".");
     info.lines = trimLines(info.lines);
     if (
       !info.lines.length || !(await fn.mode(denops) as string).startsWith("i")
@@ -181,6 +182,7 @@ export class SigHelpHandler {
     }
     this.prevItem = info.help;
 
+    console.log(info.help.signatures[0].label);
     let floatingOpt: FloatOption = {
       relative: "win",
       anchor: "SW",
@@ -207,16 +209,12 @@ export type DocResponce = {
 };
 
 export type SighelpResponce = {
-  item: CompletionItem;
-  selected: number;
   help: SignatureHelp;
   lines?: string[];
   hl?: [number, number];
-  startpos: number;
 };
 
 export class EventHandler {
-  private prevInput = "";
   private sighelpHandler = new SigHelpHandler();
   private docHandler = new DocHandler();
   private capabilities = {} as ServerCapabilities;
@@ -275,31 +273,32 @@ export class EventHandler {
   }
 
   private async onInsertEnter(denops: Denops): Promise<void> {
-    this.prevInput = "";
     await this.getCapabilities(denops);
     if (this.capabilities && this.capabilities.signatureHelpProvider) {
-      this.sighelpHandler.requestSighelp(denops, await fn.col(denops, "."));
+      this.sighelpHandler.requestSighelp(denops);
     }
   }
 
   private async onTextChanged(denops: Denops): Promise<void> {
     if (
-      !(await vars.g.get(denops, "ddc_nvim_lsp_doc#enable_signaturehelp", 1) ||
-        !this.capabilities || !this.capabilities.signatureHelpProvider)
+      !(await vars.g.get(denops, "ddc_nvim_lsp_doc#enable_signaturehelp", 1)) ||
+      !this.capabilities || !this.capabilities.signatureHelpProvider
     ) {
       return;
     }
+    let triggerCharacters = defaultTriggerCharacters;
+    if (this.capabilities.signatureHelpProvider?.triggerCharacters) {
+      triggerCharacters =
+        this.capabilities.signatureHelpProvider.triggerCharacters;
+    }
+    triggerCharacters = triggerCharacters.concat(triggerCloseCharacters);
+
     const cursorCol = await fn.col(denops, ".");
     const line = await fn.getline(denops, ".");
-    const input = line.slice(0, cursorCol - 1);
-    if (input == this.prevInput) return;
-
-    const startPos = findParen(input);
-    if (startPos != -1) {
-      this.prevInput = input;
-      this.sighelpHandler.requestSighelp(denops, startPos);
-    } else {
-      this.sighelpHandler.closeWin(denops);
+    if (
+      triggerCharacters.includes(line[cursorCol - 2])
+    ) {
+      this.sighelpHandler.requestSighelp(denops);
     }
   }
 
