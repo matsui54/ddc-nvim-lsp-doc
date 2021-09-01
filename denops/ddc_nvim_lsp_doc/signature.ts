@@ -122,7 +122,7 @@ export class SigHelpHandler {
       row: 0,
       col: col,
     };
-    await this.float.showFloating(denops, {
+    this.float.showFloating(denops, {
       syntax: "markdown",
       lines: info.lines,
       floatOpt: floatingOpt,
