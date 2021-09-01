@@ -71,6 +71,7 @@ export class SigHelpHandler {
     return isSame;
   }
 
+  // return floating windows column offset from cursor position
   private async calcWinPos(
     denops: Denops,
     info: SighelpResponce,
@@ -79,11 +80,15 @@ export class SigHelpHandler {
     const cursorCol = await fn.col(denops, ".");
     const match = getFunctionName(info.triggers, label);
     if (!match) {
-      return cursorCol;
+      return 0;
     }
     const [name, trigger] = match;
     const input = (await fn.getline(denops, ".")).slice(0, cursorCol - 1);
-    return findLabel(input, name, trigger);
+    const labelIdx = findLabel(input, name, trigger);
+    if (labelIdx == -1) {
+      return 0;
+    }
+    return labelIdx - input.length;
   }
 
   async showSignatureHelp(
@@ -111,10 +116,10 @@ export class SigHelpHandler {
 
     const col = await this.calcWinPos(denops, info);
     let floatingOpt: FloatOption = {
-      relative: "win",
+      relative: "cursor",
       anchor: "SW",
       style: "minimal",
-      row: await fn.winline(denops) - 1,
+      row: 0,
       col: col,
     };
     await this.float.showFloating(denops, {
