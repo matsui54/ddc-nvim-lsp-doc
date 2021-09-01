@@ -1,10 +1,6 @@
 local vim = vim
 local api = vim.api
 
-local is_lsp_active = function()
-  return #vim.lsp.get_active_clients() == 0
-end
-
 local respond = function(type, item)
   api.nvim_call_function('denops#notify', {'ddc_nvim_lsp_doc', 'respond', {type, item}})
             -- `call denops#notify('${denops.name}', 'onEvent',["${event}"])`,
@@ -33,12 +29,6 @@ local get_signature_help = function(arg)
   end)
 end
 
-local close_win = function(winid)
-  if winid ~= -1 and api.nvim_win_is_valid(winid) then
-    api.nvim_win_close(winid, true)
-  end
-end
-
 local get_capabilities = function()
   for id, client in pairs(vim.lsp.buf_get_clients()) do
     if client.server_capabilities then
@@ -49,9 +39,7 @@ local get_capabilities = function()
 end
 
 return {
-  is_lsp_active = is_lsp_active,
   get_resolved_item = get_resolved_item,
   get_signature_help = get_signature_help,
-  close_win = close_win,
   get_capabilities = get_capabilities,
 }
