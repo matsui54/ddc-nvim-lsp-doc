@@ -57,15 +57,14 @@ g:ddc_nvim_lsp_doc#enable_documentation
 FUNCTIONS 					*ddc-nvim-lsp-doc-functions*
 
 ddc_nvim_lsp_doc#enable()				*ddc_nvim_lsp_doc#enable()*
-		Enables |ddc-nvim-lsp-doc|.  This is a function version of
-		|:ddc-nvim-lsp-docEnable|.
+		Enables |ddc-nvim-lsp-doc|.
 
 ddc_nvim_lsp_doc#disable()				*ddc_nvim_lsp_doc#disable()*
 		Disables |ddc-nvim-lsp-doc|.
 
 ddc_nvim_lsp_doc#is_enabled()				*ddc_nvim_lsp_doc#is_enabled()*
 		Gets weather |ddc-nvim-lsp-doc| plugin is enabled.  This function
-		returns Number 1 if |ddc-nvim-lsp-doc| is enabled, zero otherwise.
+		returns 1 if |ddc-nvim-lsp-doc| is enabled, zero otherwise.
 		(not implemented)
 
 ==============================================================================
