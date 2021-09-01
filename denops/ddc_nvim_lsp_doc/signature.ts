@@ -119,8 +119,9 @@ export class SigHelpHandler {
       relative: "cursor",
       anchor: "SW",
       style: "minimal",
-      row: 0,
-      col: col,
+      row: -2,
+      col: col - 1,
+      border: "rounded",
     };
     this.float.showFloating(denops, {
       syntax: "markdown",

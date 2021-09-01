@@ -77,6 +77,7 @@ export class DocHandler {
       style: "minimal",
       row: pumInfo.row,
       col: col,
+      border: "rounded",
     };
     this.float.showFloating(denops, {
       syntax: syntax,
