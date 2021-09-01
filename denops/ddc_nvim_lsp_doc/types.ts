@@ -38,6 +38,14 @@ export type PopupPos = {
   scrollbar: boolean;
 };
 
+export type Border =
+  | "none"
+  | "single"
+  | "double"
+  | "rounded"
+  | "solid"
+  | "shadow";
+
 export type FloatOption = {
   relative?: "editor" | "win" | "cursor";
   win?: number;
@@ -51,14 +59,7 @@ export type FloatOption = {
   external?: number;
   zindex?: number;
   style?: string;
-  border?:
-    | "none"
-    | "single"
-    | "double"
-    | "rounded"
-    | "solid"
-    | "shadow"
-    | string[];
+  border?: Border;
 };
 
 export type SignatureHelp = {
