@@ -144,12 +144,10 @@ export class Float {
         opts.floatOpt,
       ) as number;
     }
-    // await this.closeWin(denops, opts.winName);
 
     const nsId = await this.getNamespace(denops);
     const floatWinnr = this.winid;
     await batch(denops, async (denops) => {
-      // vars.buffers.set(denops, opts.winName, floatWinnr);
       if (opts.syntax == "markdown") {
         await nvimFn.nvim_win_set_option(denops, floatWinnr, "conceallevel", 2);
         await nvimFn.nvim_win_set_option(
