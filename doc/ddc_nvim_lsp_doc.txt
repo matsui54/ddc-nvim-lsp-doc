@@ -65,7 +65,6 @@ ddc_nvim_lsp_doc#disable()				*ddc_nvim_lsp_doc#disable()*
 ddc_nvim_lsp_doc#is_enabled()				*ddc_nvim_lsp_doc#is_enabled()*
 		Gets weather |ddc-nvim-lsp-doc| plugin is enabled.  This function
 		returns 1 if |ddc-nvim-lsp-doc| is enabled, zero otherwise.
-		(not implemented)
 
 ==============================================================================
 vim:tw=78:ts=8:ft=help:norl:noet:fen:
