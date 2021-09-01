@@ -1,8 +1,9 @@
 import { assertEquals } from "./deps.ts";
 import { trimLines } from "./util.ts";
 import { findLabel, getFunctionName } from "./signature.ts";
+import Mutex from "./mutex.ts";
 
-Deno.test("findLabel", () => {
+Deno.test("test findLabel", () => {
   assertEquals(findLabel("ho", "ho", "("), -1);
   assertEquals(findLabel("hoge(", "hoge", "("), 0);
   assertEquals(findLabel("hoge(foo", "hoge", "("), 0);
@@ -22,11 +23,40 @@ Deno.test("findLabel", () => {
   );
 });
 
-Deno.test("findLabel", () => {
+Deno.test("test getFunctionName", () => {
+  const triggers = [",", "(", "<"];
+  assertEquals(getFunctionName(triggers, "hoge(foo: number, aaa: string)"), [
+    "hoge",
+    "(",
+  ]);
+  assertEquals(getFunctionName(triggers, "abc_xyz<T>"), ["abc_xyz", "<"]);
 });
 
-Deno.test("trimLines", () => {
+Deno.test("test trimLines", () => {
   assertEquals(trimLines(["   ", "foo", "hoge", ""]), ["foo", "hoge"]);
   assertEquals(trimLines(["foo", "hoge", ""]), ["foo", "hoge"]);
   assertEquals(trimLines(["", "foo", "hoge"]), ["foo", "hoge"]);
+});
+
+Deno.test({
+  name: "test Mutex",
+  async fn() {
+    const mutex = new Mutex();
+    const id1 = await mutex.acquire();
+    if (!id1) {
+      throw Error("id from acqire() is null");
+    }
+    setTimeout(async () => {
+      mutex.release(id1);
+    }, 1000);
+    const id2 = mutex.acquire();
+    const id3 = mutex.acquire();
+    Promise.all([id2, id3]).then((values) => {
+      assertEquals(values[0], null);
+      if (values[1]) {
+        mutex.release(values[1]);
+      }
+    });
+  },
+  sanitizeOps: false,
 });
