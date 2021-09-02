@@ -1,5 +1,5 @@
 import { Float } from "./float.ts";
-import { Denops, op, vars } from "./deps.ts";
+import { Denops, op } from "./deps.ts";
 import {
   CompletionItem,
   FloatOption,
@@ -7,6 +7,7 @@ import {
   PopupPos,
 } from "./types.ts";
 import { trimLines } from "./util.ts";
+import { DocConfig } from "./config.ts";
 
 export class DocHandler {
   private float = new Float();
@@ -16,7 +17,11 @@ export class DocHandler {
     this.float.closeWin(denops);
   }
 
-  async showCompleteDoc(denops: Denops, item: CompletionItem) {
+  async showCompleteDoc(
+    denops: Denops,
+    item: CompletionItem,
+    config: DocConfig,
+  ) {
     let detail = "";
     let syntax: string = "markdown";
     if (item.detail) {
@@ -65,11 +70,11 @@ export class DocHandler {
     const col = pumInfo.col + pumInfo.width + (pumInfo.scrollbar ? 1 : 0);
     const maxWidth = Math.min(
       await op.columns.get(denops) - col,
-      await vars.g.get(denops, "ddc_nvim_lsp_doc#max_winwidth", 80) as number,
+      config.maxWidth,
     );
     const maxHeight = Math.min(
       await denops.eval("&lines") as number - pumInfo.row,
-      await vars.g.get(denops, "ddc_nvim_lsp_doc#max_winheight", 30) as number,
+      config.maxHeight,
     );
     let floatingOpt: FloatOption = {
       relative: "editor",
@@ -77,7 +82,7 @@ export class DocHandler {
       style: "minimal",
       row: pumInfo.row,
       col: col,
-      border: "rounded",
+      border: config.border,
     };
     this.float.showFloating(denops, {
       syntax: syntax,

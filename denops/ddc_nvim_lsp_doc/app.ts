@@ -50,6 +50,7 @@ export async function main(denops: Denops) {
     );
   }
 
+  await handler.getConfig(denops);
   registerAutocmd(denops);
   await batch(denops, async (denops) => {
     await vars.g.set(denops, "ddc_nvim_lsp_doc#_initialized", 1);

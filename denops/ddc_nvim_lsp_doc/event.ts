@@ -7,6 +7,7 @@ import {
 } from "./types.ts";
 import { DocHandler } from "./documentation.ts";
 import { SigHelpHandler } from "./signature.ts";
+import { Config, makeConfig } from "./config.ts";
 
 interface ServerCapabilities {
   signatureHelpProvider?: SignatureHelpOptions;
@@ -33,6 +34,7 @@ const defaultTriggerCharacters = [",", "(", "<", "["];
 const triggerCloseCharacters = [")", ">", "]"];
 
 export class EventHandler {
+  private config: Config = {} as Config;
   private sighelpHandler = new SigHelpHandler();
   private docHandler = new DocHandler();
   private capabilities = {} as ServerCapabilities;
@@ -68,9 +70,7 @@ export class EventHandler {
   }
 
   private async onCompleteChanged(denops: Denops): Promise<void> {
-    if (
-      !(await vars.g.get(denops, "ddc_nvim_lsp_doc#enable_documentation", 1))
-    ) {
+    if (!this.config.documentation.enable) {
       return;
     }
     const decoded = await this.getDecodedCompleteItem(denops);
@@ -80,7 +80,11 @@ export class EventHandler {
     }
 
     if (decoded.documentation) {
-      this.docHandler.showCompleteDoc(denops, decoded);
+      this.docHandler.showCompleteDoc(
+        denops,
+        decoded,
+        this.config.documentation,
+      );
     } else {
       denops.call(
         "luaeval",
@@ -91,6 +95,8 @@ export class EventHandler {
   }
 
   private async onInsertEnter(denops: Denops): Promise<void> {
+    await this.getConfig(denops);
+    this.sighelpHandler.onInsertEnter();
     await this.getCapabilities(denops);
     if (this.capabilities && this.capabilities.signatureHelpProvider) {
       this.sighelpHandler.requestSighelp(denops, defaultTriggerCharacters);
@@ -99,7 +105,7 @@ export class EventHandler {
 
   private async onTextChanged(denops: Denops): Promise<void> {
     if (
-      !(await vars.g.get(denops, "ddc_nvim_lsp_doc#enable_signaturehelp", 1)) ||
+      !this.config.signature.enable ||
       !this.capabilities || !this.capabilities.signatureHelpProvider
     ) {
       return;
@@ -120,10 +126,14 @@ export class EventHandler {
     }
   }
 
+  async getConfig(denops: Denops): Promise<void> {
+    const users = await vars.g.get(denops, "ddc_nvim_lsp_doc", {}) as Config;
+    this.config = makeConfig(users);
+  }
+
   async onEvent(denops: Denops, event: autocmd.AutocmdEvent): Promise<void> {
     if (event == "InsertEnter") {
       this.onInsertEnter(denops);
-      this.sighelpHandler.onInsertEnter();
     } else {
       if (!this.capabilities) {
         await this.getCapabilities(denops);
@@ -138,11 +148,11 @@ export class EventHandler {
 
   async onDocResponce(denops: Denops, arg: DocResponce) {
     if (arg.selected != this.selected) {
-      this.docHandler.showCompleteDoc(denops, arg.item);
+      this.docHandler.showCompleteDoc(denops, arg.item, this.config.documentation);
     }
   }
 
   async onSighelpResponce(denops: Denops, arg: SighelpResponce) {
-    this.sighelpHandler.showSignatureHelp(denops, arg);
+    this.sighelpHandler.showSignatureHelp(denops, arg, this.config.signature);
   }
 }

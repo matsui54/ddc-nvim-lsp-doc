@@ -2,6 +2,7 @@ import { assertEquals } from "./deps.ts";
 import { trimLines } from "./util.ts";
 import { findLabel, getFunctionName } from "./signature.ts";
 import Mutex from "./mutex.ts";
+import { Config, makeConfig } from "./config.ts";
 
 Deno.test("test findLabel", () => {
   assertEquals(findLabel("ho", "ho", "("), -1);
@@ -59,4 +60,31 @@ Deno.test({
     });
   },
   sanitizeOps: false,
+});
+
+Deno.test("test makeConfig", () => {
+  const userconfig: unknown = {
+    documentation: {
+      enable: false,
+    },
+    signature: {
+      enable: true,
+      border: "double",
+      maxWidth: 100,
+    },
+  };
+  assertEquals(makeConfig(userconfig as Config), {
+    documentation: {
+      enable: false,
+      border: "rounded",
+      maxWidth: 10,
+      maxHeight: 20,
+    },
+    signature: {
+      enable: true,
+      border: "double",
+      maxWidth: 100,
+      maxHeight: 20,
+    },
+  });
 });

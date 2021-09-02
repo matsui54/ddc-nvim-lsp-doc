@@ -3,6 +3,7 @@ import { trimLines } from "./util.ts";
 import { SighelpResponce } from "./event.ts";
 import { Denops, fn, op } from "./deps.ts";
 import { FloatOption, SignatureHelp } from "./types.ts";
+import { SignatureConfig } from "./config.ts";
 
 export function findLabel(line: string, name: string, trigger: string): number {
   const pairs = {
@@ -56,6 +57,7 @@ export class SigHelpHandler {
       { arg: { triggers: triggers } },
     );
   }
+
   async closeWin(denops: Denops) {
     this.float.closeWin(denops);
   }
@@ -94,6 +96,7 @@ export class SigHelpHandler {
   async showSignatureHelp(
     denops: Denops,
     info: SighelpResponce,
+    config: SignatureConfig,
   ): Promise<void> {
     info.lines = trimLines(info.lines);
     if (
@@ -114,6 +117,14 @@ export class SigHelpHandler {
     }
     this.prevItem = info.help;
 
+    const maxWidth = Math.min(
+      await op.columns.get(denops),
+      config.maxWidth,
+    );
+    const maxHeight = Math.min(
+      await fn.winline(denops),
+      config.maxHeight,
+    );
     const col = await this.calcWinPos(denops, info);
     let floatingOpt: FloatOption = {
       relative: "cursor",
@@ -121,7 +132,7 @@ export class SigHelpHandler {
       style: "minimal",
       row: -2,
       col: col - 1,
-      border: "rounded",
+      border: config.border,
     };
     this.float.showFloating(denops, {
       syntax: "markdown",
@@ -130,8 +141,8 @@ export class SigHelpHandler {
       events: ["InsertLeave", "CursorMoved"],
       winName: this.winName,
       hl: info.hl,
-      maxWidth: await op.columns.get(denops),
-      maxHeight: await fn.winline(denops),
+      maxWidth: maxWidth,
+      maxHeight: maxHeight,
     });
   }
 }
