@@ -127,7 +127,11 @@ export class EventHandler {
   }
 
   async getConfig(denops: Denops): Promise<void> {
-    const users = await vars.g.get(denops, "ddc_nvim_lsp_doc", {}) as Config;
+    const users = await vars.g.get(
+      denops,
+      "ddc_nvim_lsp_doc_config",
+      {},
+    ) as Config;
     this.config = makeConfig(users);
   }
 
@@ -148,7 +152,11 @@ export class EventHandler {
 
   async onDocResponce(denops: Denops, arg: DocResponce) {
     if (arg.selected != this.selected) {
-      this.docHandler.showCompleteDoc(denops, arg.item, this.config.documentation);
+      this.docHandler.showCompleteDoc(
+        denops,
+        arg.item,
+        this.config.documentation,
+      );
     }
   }
 
