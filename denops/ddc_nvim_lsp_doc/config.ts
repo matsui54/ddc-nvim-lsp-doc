@@ -19,7 +19,7 @@ export type SignatureConfig = CommonConfig & {};
 export function getDefaultDocConfig(): DocConfig {
   return {
     enable: true,
-    border: "rounded",
+    border: "single",
     maxWidth: 80,
     maxHeight: 30,
   };
@@ -28,7 +28,7 @@ export function getDefaultDocConfig(): DocConfig {
 export function getDefaultSignatureConfig(): SignatureConfig {
   return {
     enable: true,
-    border: "rounded",
+    border: "single",
     maxWidth: 80,
     maxHeight: 10,
   };
