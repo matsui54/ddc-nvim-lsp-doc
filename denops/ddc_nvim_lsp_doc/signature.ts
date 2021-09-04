@@ -99,9 +99,9 @@ export class SigHelpHandler {
     config: SignatureConfig,
   ): Promise<void> {
     info.lines = trimLines(info.lines);
-    if (
-      !info.lines.length || !(await fn.mode(denops) as string).startsWith("i")
-    ) {
+    const mode = await fn.mode(denops);
+    // if allow select mode, vsnip's jump becomes unavailable
+    if (!info.lines.length || mode.search(/^i/) == -1) {
       this.closeWin(denops);
       return;
     }
