@@ -120,6 +120,10 @@ export class Float {
     denops: Denops,
     opts: OpenFloatOptions,
   ): Promise<void> {
+    if (opts.floatOpt.border != "none") {
+      opts.maxWidth -= 2;
+      opts.maxHeight -= 2;
+    }
     if (opts.maxWidth < 1 || opts.maxHeight < 1) {
       this.closeWin(denops);
       return;
