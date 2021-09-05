@@ -34,6 +34,7 @@ export class Float {
     let maxWidth = 0, height = 0;
     lines.map((line) => maxWidth = Math.max(maxWidth, line.length));
     const width = Math.min(maxWidth, opts.maxWidth);
+
     for (const line of lines) {
       height += Math.max(1, Math.floor(line.length / width));
     }
@@ -103,14 +104,24 @@ export class Float {
       ) as string[];
       [width, height] = this.makeFloatingwinSize(contents, opts);
     } else {
-      await nvimFn.nvim_buf_set_lines(
-        denops,
-        floatBufnr,
-        0,
-        -1,
-        true,
-        opts.lines,
-      );
+      await batch(denops, async (helper: Denops) => {
+        await nvimFn.nvim_buf_set_lines(
+          helper,
+          floatBufnr,
+          0,
+          -1,
+          true,
+          opts.lines,
+        );
+        if (opts.syntax) {
+          await nvimFn.nvim_buf_set_option(
+            denops,
+            floatBufnr,
+            "syntax",
+            opts.syntax,
+          );
+        }
+      });
       [width, height] = this.makeFloatingwinSize(opts.lines, opts);
     }
     return [floatBufnr, width, height];
