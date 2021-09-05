@@ -37,6 +37,8 @@ export class EventHandler {
   private config: Config = {} as Config;
   private sighelpHandler = new SigHelpHandler();
   private docHandler = new DocHandler();
+  private enableSighelp = false;
+  private enableDoc = false;
   private capabilities = {} as ServerCapabilities;
   private selected = -1;
 
@@ -70,7 +72,7 @@ export class EventHandler {
   }
 
   private async onCompleteChanged(denops: Denops): Promise<void> {
-    if (!this.config.documentation.enable) {
+    if (!this.enableDoc) {
       return;
     }
     const decoded = await this.getDecodedCompleteItem(denops);
@@ -96,16 +98,22 @@ export class EventHandler {
 
   private async onInsertEnter(denops: Denops): Promise<void> {
     await this.getConfig(denops);
+    this.enableDoc = this.config.documentation.enable;
+    this.enableSighelp = this.config.signature.enable;
+
     this.sighelpHandler.onInsertEnter();
     await this.getCapabilities(denops);
-    if (this.capabilities && this.capabilities.signatureHelpProvider) {
+    if (
+      this.capabilities && this.capabilities.signatureHelpProvider &&
+      this.enableSighelp
+    ) {
       this.sighelpHandler.requestSighelp(denops, defaultTriggerCharacters);
     }
   }
 
   private async onTextChanged(denops: Denops): Promise<void> {
     if (
-      !this.config.signature.enable ||
+      !this.enableSighelp ||
       !this.capabilities || !this.capabilities.signatureHelpProvider
     ) {
       return;
