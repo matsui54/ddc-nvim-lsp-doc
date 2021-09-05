@@ -1,10 +1,13 @@
 import { Float } from "./float.ts";
-import { Denops, op } from "./deps.ts";
+import { Denops, fn, op } from "./deps.ts";
 import {
+  CompleteInfo,
   CompletionItem,
   FloatOption,
+  JsonUserData,
   MarkupContent,
   PopupPos,
+  VimCompleteItem,
 } from "./types.ts";
 import { trimLines } from "./util.ts";
 import { DocConfig } from "./config.ts";
@@ -17,11 +20,10 @@ export class DocHandler {
     this.float.closeWin(denops);
   }
 
-  async showCompleteDoc(
+  private async parseLspItem(
     denops: Denops,
     item: CompletionItem,
-    config: DocConfig,
-  ) {
+  ): Promise<[string[], string] | null> {
     let detail = "";
     let syntax: string = "markdown";
     if (item.detail) {
@@ -44,8 +46,7 @@ export class DocHandler {
     } else if (detail.length) {
       arg = detail;
     } else {
-      this.closeWin(denops);
-      return;
+      return null;
     }
 
     const lines = trimLines(
@@ -56,10 +57,61 @@ export class DocHandler {
       ) as string[],
     );
     if (!lines.length) {
-      this.closeWin(denops);
-      return;
+      return null;
+    }
+    return [lines, syntax];
+  }
+
+  private async showFoundDoc(
+    denops: Denops,
+    item: VimCompleteItem,
+    config: DocConfig,
+  ): Promise<void> {
+    let decoded: JsonUserData = null;
+    if (typeof item.user_data == "string") {
+      try {
+        decoded = JSON.parse(item.user_data) as JsonUserData;
+      } catch (e) {
+        if (e instanceof SyntaxError) {
+          decoded = null;
+        }
+      }
+      // plain string
+      if (!decoded) {
+        this.showFloating(
+          denops,
+          item.user_data.split("\n"),
+          "plaintext",
+          config,
+        );
+      }
     }
 
+    // neither json nor string
+    if (!decoded) return;
+
+    // nvim-lsp + ddc
+    if ("lspitem" in decoded) {
+      if (decoded.lspitem.documentation) {
+        this.showLspDoc(denops, decoded.lspitem, config);
+      } else {
+        denops.call(
+          "luaeval",
+          "require('ddc_nvim_lsp_doc.helper').get_resolved_item(_A.arg)",
+          { arg: { decoded: decoded } },
+        );
+      }
+    }
+
+    // unknown object. Do nothing
+  }
+
+  async showFloating(
+    denops: Denops,
+    lines: string[],
+    syntax: string,
+    config: DocConfig,
+  ) {
     const pumInfo = await denops.call("pum_getpos") as PopupPos;
     if (!pumInfo || !pumInfo.col) {
       this.closeWin(denops);
@@ -93,5 +145,37 @@ export class DocHandler {
       maxWidth: maxWidth,
       maxHeight: maxHeight,
     });
+  }
+
+  async showCompleteDoc(
+    denops: Denops,
+    config: DocConfig,
+  ) {
+    if (!config.enable) return;
+    const info = await fn.complete_info(denops, [
+      "mode",
+      "selected",
+      "items",
+    ]) as CompleteInfo;
+    if (
+      info["mode"] != "eval" ||
+      info["selected"] == -1
+    ) {
+      this.closeWin(denops);
+      return;
+    }
+    const item = info["items"][info["selected"]];
+    if (!item.user_data) {
+      this.closeWin(denops);
+      return;
+    }
+    this.showFoundDoc(denops, item, config);
+  }
+
+  async showLspDoc(denops: Denops, item: CompletionItem, config: DocConfig) {
+    const maybe = await this.parseLspItem(denops, item);
+    if (!maybe) return;
+    const [lines, syntax] = maybe;
+    this.showFloating(denops, lines, syntax, config);
   }
 }

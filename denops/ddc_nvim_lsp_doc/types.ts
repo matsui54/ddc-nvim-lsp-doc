@@ -14,8 +14,18 @@ export type CompleteInfo = {
   items: VimCompleteItem[];
 };
 
-export type UserData = {
+export type UserData = JsonUserData | string;
+
+export type JsonUserData = DdcLspData | VsnipData | null;
+
+export type DdcLspData = {
   lspitem: CompletionItem;
+};
+
+export type VsnipData = {
+  vsnip: {
+    "snippet": string[];
+  };
 };
 
 export type CompletionItem = {

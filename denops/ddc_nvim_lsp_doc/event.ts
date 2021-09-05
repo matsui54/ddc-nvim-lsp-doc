@@ -1,10 +1,5 @@
 import { autocmd, Denops, fn, vars } from "./deps.ts";
-import {
-  CompleteInfo,
-  CompletionItem,
-  SignatureHelp,
-  UserData,
-} from "./types.ts";
+import { CompletionItem, SignatureHelp } from "./types.ts";
 import { DocHandler } from "./documentation.ts";
 import { SigHelpHandler } from "./signature.ts";
 import { Config, makeConfig } from "./config.ts";
@@ -38,29 +33,6 @@ export class EventHandler {
   private sighelpHandler = new SigHelpHandler();
   private docHandler = new DocHandler();
   private capabilities = {} as ServerCapabilities;
-  private selected = -1;
-
-  private async getDecodedCompleteItem(
-    denops: Denops,
-  ): Promise<CompletionItem | null> {
-    const info = await fn.complete_info(denops, [
-      "mode",
-      "selected",
-      "items",
-    ]) as CompleteInfo;
-    if (
-      info["mode"] != "eval" ||
-      info["selected"] == -1
-    ) {
-      return null;
-    }
-    const item = info["items"][info["selected"]];
-    if (!item.user_data || typeof item.user_data !== "string") return null;
-    const decoded = JSON.parse(item.user_data) as UserData;
-    if (!decoded["lspitem"]) return null;
-    this.selected = info.selected;
-    return decoded["lspitem"];
-  }
 
   private async getCapabilities(denops: Denops) {
     this.capabilities = await denops.call(
@@ -70,28 +42,7 @@ export class EventHandler {
   }
 
   private async onCompleteChanged(denops: Denops): Promise<void> {
-    if (!this.config.documentation.enable) {
-      return;
-    }
-    const decoded = await this.getDecodedCompleteItem(denops);
-    if (!decoded) {
-      this.docHandler.closeWin(denops);
-      return;
-    }
-
-    if (decoded.documentation) {
-      this.docHandler.showCompleteDoc(
-        denops,
-        decoded,
-        this.config.documentation,
-      );
-    } else {
-      denops.call(
-        "luaeval",
-        "require('ddc_nvim_lsp_doc.helper').get_resolved_item(_A.arg)",
-        { arg: { decoded: decoded } },
-      );
-    }
+    this.docHandler.showCompleteDoc(denops, this.config.documentation);
   }
 
   private async onInsertEnter(denops: Denops): Promise<void> {
@@ -151,13 +102,7 @@ export class EventHandler {
   }
 
   async onDocResponce(denops: Denops, arg: DocResponce) {
-    if (arg.selected != this.selected) {
-      this.docHandler.showCompleteDoc(
-        denops,
-        arg.item,
-        this.config.documentation,
-      );
-    }
+    this.docHandler.showLspDoc(denops, arg.item, this.config.documentation);
   }
 
   async onSighelpResponce(denops: Denops, arg: SighelpResponce) {
