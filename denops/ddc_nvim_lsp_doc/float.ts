@@ -141,12 +141,17 @@ export class Float {
       await nvimFn.nvim_win_set_config(denops, this.winid, opts.floatOpt);
       await nvimFn.nvim_win_set_buf(denops, this.winid, floatBufnr);
     } else {
-      this.winid = await nvimFn.nvim_open_win(
+      const winid = await nvimFn.nvim_open_win(
         denops,
         floatBufnr,
         false,
         opts.floatOpt,
       ) as number;
+      if (!winid) {
+        this.mutex.release(id);
+        return;
+      }
+      this.winid = winid;
     }
 
     const nsId = await this.getNamespace(denops);
