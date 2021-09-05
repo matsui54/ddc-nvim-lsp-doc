@@ -103,6 +103,16 @@ export class DocHandler {
       }
     }
 
+    // vsnip
+    if (config.supportVsnip && "vsnip" in decoded) {
+      this.showFloating(
+        denops,
+        decoded.vsnip.snippet,
+        await op.filetype.getLocal(denops),
+        config,
+      );
+    }
+
     // unknown object. Do nothing
   }
 

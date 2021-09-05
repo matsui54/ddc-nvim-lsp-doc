@@ -91,6 +91,11 @@ maxHeight				*ddc-nvim-lsp-doc-option-maxHeight*
 		Max height of floating window.
 		(default: in documentation 30, in signature 10)
 
+supportVsnip				*ddc-nvim-lsp-doc-option-supporVsnip*
+		If it is true, vsnip's snippets preview is shown.
+		(Only in documentation)
+		(default: v:true)
+
 ==============================================================================
 CONFIGURATION				*ddc-nvim-lsp-doc-configuration*
 
