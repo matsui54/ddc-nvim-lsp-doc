@@ -1,6 +1,21 @@
-import { batch, Denops, nvimFn } from "./deps.ts";
+import { batch, Denops, fn, gather, nvimFn } from "./deps.ts";
 import { OpenFloatOptions } from "./types.ts";
 import Mutex from "./mutex.ts";
+
+export function makeFloatingwinSize(
+  widths: number[],
+  maxWidth: number,
+  maxHeight: number,
+): [number, number] {
+  const width = Math.min(Math.max(...widths), maxWidth);
+
+  let height = 0;
+  for (const w of widths) {
+    height += Math.floor((w ? w - 1 : 0) / width) + 1;
+  }
+  height = Math.min(maxHeight, height);
+  return [width, height];
+}
 
 export class Float {
   private winid = -1;
@@ -25,21 +40,6 @@ export class Float {
   private async bufExists(denops: Denops): Promise<boolean> {
     return this.bufnr != -1 &&
       await nvimFn.nvim_buf_is_valid(denops, this.bufnr) as boolean;
-  }
-
-  private makeFloatingwinSize(
-    lines: string[],
-    opts: OpenFloatOptions,
-  ): [number, number] {
-    let maxWidth = 0, height = 0;
-    lines.map((line) => maxWidth = Math.max(maxWidth, line.length));
-    const width = Math.min(maxWidth, opts.maxWidth);
-
-    for (const line of lines) {
-      height += Math.floor((line.length ? line.length - 1 : 0) / width) + 1;
-    }
-    height = Math.min(opts.maxHeight, height);
-    return [width, height];
   }
 
   private async getNamespace(denops: Denops): Promise<number> {
@@ -88,9 +88,9 @@ export class Float {
       false,
       true,
     ) as number;
-    let width: number, height: number;
+    let contents: string[];
     if (opts.syntax == "markdown") {
-      const contents = await denops.call(
+      contents = await denops.call(
         "luaeval",
         "vim.lsp.util.stylize_markdown(_A.buf, _A.line, _A.opts)",
         {
@@ -102,11 +102,10 @@ export class Float {
           },
         },
       ) as string[];
-      [width, height] = this.makeFloatingwinSize(contents, opts);
     } else {
-      await batch(denops, async (helper: Denops) => {
+      await batch(denops, async (denops: Denops) => {
         await nvimFn.nvim_buf_set_lines(
-          helper,
+          denops,
           floatBufnr,
           0,
           -1,
@@ -122,8 +121,19 @@ export class Float {
           );
         }
       });
-      [width, height] = this.makeFloatingwinSize(opts.lines, opts);
+      contents = opts.lines;
     }
+    const widths = await gather(denops, async (denops) => {
+      for (const line of contents) {
+        await fn.strdisplaywidth(denops, line);
+      }
+    }) as number[];
+    console.log(widths);
+    const [width, height] = makeFloatingwinSize(
+      widths,
+      opts.maxWidth,
+      opts.maxHeight,
+    );
     return [floatBufnr, width, height];
   }
 
