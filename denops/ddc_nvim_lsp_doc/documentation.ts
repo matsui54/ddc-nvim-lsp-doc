@@ -123,7 +123,7 @@ export class DocHandler {
         denops.call(
           "luaeval",
           "require('ddc_nvim_lsp_doc.helper').get_resolved_item(_A.arg)",
-          { arg: { decoded: decoded } },
+          { arg: { decoded: decoded.lspitem } },
         );
       }
       return;
