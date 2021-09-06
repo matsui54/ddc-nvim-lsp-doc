@@ -128,7 +128,6 @@ export class Float {
         await fn.strdisplaywidth(denops, line);
       }
     }) as number[];
-    console.log(widths);
     const [width, height] = makeFloatingwinSize(
       widths,
       opts.maxWidth,
