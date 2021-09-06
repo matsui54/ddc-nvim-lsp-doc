@@ -1,9 +1,9 @@
 type Resolver = (id: string | null) => void;
 
 /**
- * A mutex lock for coordination across async functions
- * This is based off of https://github.com/ide/await-lock/blob/master/src/AwaitLock.ts
- */
+  * mutex like class
+  * This is besed on https://deno.land/x/await_mutex@v1.0.1
+  */
 export default class Mutex {
   private acquired: boolean = false;
   private waitingResolver: Resolver = () => {};
@@ -34,9 +34,8 @@ export default class Mutex {
   }
 
   /**
-   * Releases the lock and gives it to the next waiting acquirer, if there is
-   * one. Each acquirer must release the lock exactly once.
-   */
+    * Releases the lock and gives it to the waiting acquirer
+    */
   release(id: string): void {
     if (!this.acquired) {
       throw new Error(`Cannot release an unacquired lock`);
