@@ -36,7 +36,7 @@ export class Float {
     const width = Math.min(maxWidth, opts.maxWidth);
 
     for (const line of lines) {
-      height += Math.max(1, Math.floor(line.length / width));
+      height += Math.floor(line.length / width) + 1;
     }
     height = Math.min(opts.maxHeight, height);
     return [width, height];
