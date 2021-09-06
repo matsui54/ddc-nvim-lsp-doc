@@ -16,10 +16,6 @@ export class DocHandler {
   private float = new Float();
   private winName = "ddc_nvim_lsp_doc_document_winid";
 
-  async closeWin(denops: Denops) {
-    this.float.closeWin(denops);
-  }
-
   private async parseLspItem(
     denops: Denops,
     item: CompletionItem,
@@ -144,7 +140,7 @@ export class DocHandler {
     this.showInfoField(denops, item, config);
   }
 
-  async showFloating(
+  private async showFloating(
     denops: Denops,
     lines: string[],
     syntax: string,
@@ -211,5 +207,9 @@ export class DocHandler {
     if (!maybe) return;
     const [lines, syntax] = maybe;
     this.showFloating(denops, lines, syntax, config);
+  }
+
+  async closeWin(denops: Denops) {
+    this.float.closeWin(denops);
   }
 }

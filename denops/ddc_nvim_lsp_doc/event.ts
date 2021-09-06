@@ -32,6 +32,7 @@ export class EventHandler {
   private config: Config = {} as Config;
   private sighelpHandler = new SigHelpHandler();
   private docHandler = new DocHandler();
+  private docTimer: number = 0;
   private capabilities = {} as ServerCapabilities;
 
   private async getCapabilities(denops: Denops) {
@@ -42,7 +43,11 @@ export class EventHandler {
   }
 
   private async onCompleteChanged(denops: Denops): Promise<void> {
-    this.docHandler.showCompleteDoc(denops, this.config.documentation);
+    // debounce
+    clearTimeout(this.docTimer);
+    this.docTimer = setTimeout(async () => {
+      this.docHandler.showCompleteDoc(denops, this.config.documentation);
+    }, this.config.documentation.delay);
   }
 
   private async onInsertEnter(denops: Denops): Promise<void> {

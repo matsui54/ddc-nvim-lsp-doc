@@ -102,6 +102,13 @@ supportInfo				*ddc-nvim-lsp-doc-option-supportInfo*
 		(Only in documentation)
 		(default: v:true)
 
+delay					*ddc-nvim-lsp-doc-option-delay*
+    		Time in milliseconds to delay the completion documentation
+		popup. If you feel slow, specify large value.
+		Set 0 to disable debouncing.
+		(Only in documentation)
+		(default: 30)
+
 ==============================================================================
 CONFIGURATION				*ddc-nvim-lsp-doc-configuration*
 

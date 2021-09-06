@@ -15,6 +15,7 @@ export type CommonConfig = {
 export type DocConfig = CommonConfig & {
   supportVsnip: boolean;
   supportInfo: boolean;
+  delay: number;
 };
 
 export type SignatureConfig = CommonConfig & {};
@@ -27,6 +28,7 @@ export function getDefaultDocConfig(): DocConfig {
     maxHeight: 30,
     supportVsnip: true,
     supportInfo: true,
+    delay: 30,
   };
 }
 
