@@ -62,11 +62,32 @@ export class DocHandler {
     return [lines, syntax];
   }
 
+  private async showInfoField(
+    denops: Denops,
+    item: VimCompleteItem,
+    config: DocConfig,
+  ): Promise<void> {
+    if (config.supportInfo && item.info && item.info.length) {
+      this.showFloating(
+        denops,
+        item.info.split("\n"),
+        "plaintext",
+        config,
+      );
+    } else {
+      this.closeWin(denops);
+    }
+  }
+
   private async showFoundDoc(
     denops: Denops,
     item: VimCompleteItem,
     config: DocConfig,
   ): Promise<void> {
+    if (!item.user_data) {
+      this.showInfoField(denops, item, config);
+      return;
+    }
     let decoded: JsonUserData = null;
     if (typeof item.user_data == "string") {
       try {
@@ -84,11 +105,15 @@ export class DocHandler {
           "plaintext",
           config,
         );
+        return;
       }
     }
 
     // neither json nor string
-    if (!decoded) return;
+    if (!decoded) {
+      this.showInfoField(denops, item, config);
+      return;
+    }
 
     // nvim-lsp + ddc
     if ("lspitem" in decoded) {
@@ -101,6 +126,7 @@ export class DocHandler {
           { arg: { decoded: decoded } },
         );
       }
+      return;
     }
 
     // vsnip
@@ -111,9 +137,11 @@ export class DocHandler {
         await op.filetype.getLocal(denops),
         config,
       );
+      return;
     }
 
-    // unknown object. Do nothing
+    // unknown object. search for info item
+    this.showInfoField(denops, item, config);
   }
 
   async showFloating(
@@ -175,10 +203,6 @@ export class DocHandler {
       return;
     }
     const item = info["items"][info["selected"]];
-    if (!item.user_data) {
-      this.closeWin(denops);
-      return;
-    }
     this.showFoundDoc(denops, item, config);
   }
 

@@ -113,7 +113,7 @@ export class Float {
           true,
           opts.lines,
         );
-        if (opts.syntax) {
+        if (opts.syntax && opts.syntax != "plaintext") {
           await nvimFn.nvim_buf_set_option(
             denops,
             floatBufnr,
