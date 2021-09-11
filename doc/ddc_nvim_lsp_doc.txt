@@ -76,9 +76,11 @@ HIGHLIGHTS 					*ddc-nvim-lsp-doc-highlights*
 
 DdcNvimLspDocDocument			*hi-DdcNvimLspDocDocument*
 		A highlight used for background of floating window.
+		(default: links to |hl-NormalFloat|)
 
 DdcNvimLspDocBorder			*hi-DdcNvimLspDocBorder*
 		A highlight used for border of floating window.
+		(default: links to FloatBorder)
 
 ==============================================================================
 OPTIONS						*ddc-nvim-lsp-doc-options*
