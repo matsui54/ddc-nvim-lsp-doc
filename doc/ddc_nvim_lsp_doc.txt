@@ -11,6 +11,7 @@ Install			|ddc-nvim-lsp-doc-install|
 Interface		|ddc-nvim-lsp-doc-interface|
   Variables		  |ddc-nvim-lsp-doc-variables|
   Functions		  |ddc-nvim-lsp-doc-functions|
+  Highlight		  |ddc-nvim-lsp-doc-highlight|
 Options			|ddc-nvim-lsp-doc-options|
 Configuration		|ddc-nvim-lsp-doc-configuration|
 Example			|ddc-nvim-lsp-doc-example|
@@ -69,6 +70,15 @@ ddc_nvim_lsp_doc#is_enabled()			*ddc_nvim_lsp_doc#is_enabled()*
 		Returns weather |ddc-nvim-lsp-doc| plugin is enabled.  This
 		function returns 1 if |ddc-nvim-lsp-doc| is enabled, zero
 		otherwise.
+
+------------------------------------------------------------------------------
+HIGHLIGHTS 					*ddc-nvim-lsp-doc-highlights*
+
+DdcNvimLspDocDocument			*hi-DdcNvimLspDocDocument*
+		A highlight used for background of floating window.
+
+DdcNvimLspDocBorder			*hi-DdcNvimLspDocBorder*
+		A highlight used for border of floating window.
 
 ==============================================================================
 OPTIONS						*ddc-nvim-lsp-doc-options*

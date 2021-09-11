@@ -1,4 +1,4 @@
-import { autocmd, batch, Denops, vars } from "./deps.ts";
+import { autocmd, batch, Denops, fn, gather, vars } from "./deps.ts";
 import { DocResponce, EventHandler, SighelpResponce } from "./event.ts";
 
 export type ResponceType = "doc" | "sighelp";
@@ -52,7 +52,18 @@ export async function main(denops: Denops) {
 
   await handler.getConfig(denops);
   registerAutocmd(denops);
+
+  const [hldoc, hlsig] = await gather(denops, async (denops) => {
+    await fn.hlexists(denops, "DdcNvimLspDocDocument");
+    await fn.hlexists(denops, "DdcNvimLspDocBorder");
+  }) as [boolean, boolean];
   await batch(denops, async (denops) => {
     await vars.g.set(denops, "ddc_nvim_lsp_doc#_initialized", 1);
+    if (!hldoc) {
+      await denops.cmd("highlight link DdcNvimLspDocDocument NormalFloat");
+    }
+    if (!hlsig) {
+      await denops.cmd("highlight link DdcNvimLspDocBorder NormalFloat");
+    }
   });
 }

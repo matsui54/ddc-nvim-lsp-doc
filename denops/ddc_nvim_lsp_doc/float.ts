@@ -188,6 +188,12 @@ export class Float {
       }
       await nvimFn.nvim_win_set_option(denops, floatWinnr, "wrap", true);
       await nvimFn.nvim_win_set_option(denops, floatWinnr, "foldenable", false);
+      await nvimFn.nvim_win_set_option(
+        denops,
+        floatWinnr,
+        "winhighlight",
+        "NormalFloat:DdcNvimLspDocDocument,FloatBorder:DdcNvimLspDocBorder",
+      );
 
       await nvimFn.nvim_buf_set_option(denops, floatBufnr, "modifiable", false);
       await nvimFn.nvim_buf_set_option(denops, floatBufnr, "bufhidden", "wipe");
