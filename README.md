@@ -32,7 +32,7 @@ https://github.com/Shougo/ddc-nvim-lsp
 Use your favorite plugin manager.
 
 ## Configuration
-For detail, please see help.
+For detail, please see [help](doc/ddc_nvim_lsp_doc.txt).
 ``` vim
 call ddc_nvim_lsp_doc#enable()
 ```
