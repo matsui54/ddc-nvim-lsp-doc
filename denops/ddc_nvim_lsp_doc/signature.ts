@@ -122,7 +122,7 @@ export class SigHelpHandler {
       config.maxWidth,
     );
     const maxHeight = Math.min(
-      await fn.winline(denops),
+      (await fn.screenrow(denops) as number) - 1,
       config.maxHeight,
     );
     const col = await this.calcWinPos(denops, info);
