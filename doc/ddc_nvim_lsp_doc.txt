@@ -76,9 +76,11 @@ HIGHLIGHTS 					*ddc-nvim-lsp-doc-highlights*
 
 DdcNvimLspDocDocument			*hi-DdcNvimLspDocDocument*
 		A highlight used for background of floating window.
+		(default: links to |hl-NormalFloat|)
 
 DdcNvimLspDocBorder			*hi-DdcNvimLspDocBorder*
 		A highlight used for border of floating window.
+		(default: links to FloatBorder)
 
 ==============================================================================
 OPTIONS						*ddc-nvim-lsp-doc-options*
@@ -100,6 +102,10 @@ maxWidth				*ddc-nvim-lsp-doc-option-maxWidth*
 maxHeight				*ddc-nvim-lsp-doc-option-maxHeight*
 		Max height of floating window.
 		(default: in documentation 30, in signature 10)
+
+winblend				*ddc-nvim-lsp-doc-option-winblend*
+		'winblend' of the floating window
+		(default: 'winblend')
 
 supportVsnip				*ddc-nvim-lsp-doc-option-supporVsnip*
 		If it is true, vsnip's snippets preview is shown.

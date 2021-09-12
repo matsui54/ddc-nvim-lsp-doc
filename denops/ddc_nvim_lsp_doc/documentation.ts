@@ -178,6 +178,7 @@ export class DocHandler {
       winName: this.winName,
       maxWidth: maxWidth,
       maxHeight: maxHeight,
+      blend: config.winblend,
     });
   }
 
