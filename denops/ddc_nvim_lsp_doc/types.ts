@@ -171,4 +171,5 @@ export type OpenFloatOptions = {
   wrapAt?: number;
   maxWidth: number;
   maxHeight: number;
+  blend?: number;
 };

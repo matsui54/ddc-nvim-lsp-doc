@@ -194,6 +194,14 @@ export class Float {
         "winhighlight",
         "NormalFloat:DdcNvimLspDocDocument,FloatBorder:DdcNvimLspDocBorder",
       );
+      if (typeof opts.blend !== "undefined") {
+        await nvimFn.nvim_win_set_option(
+          denops,
+          floatWinnr,
+          "winblend",
+          opts.blend,
+        );
+      }
 
       await nvimFn.nvim_buf_set_option(denops, floatBufnr, "modifiable", false);
       await nvimFn.nvim_buf_set_option(denops, floatBufnr, "bufhidden", "wipe");

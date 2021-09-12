@@ -10,6 +10,7 @@ export type CommonConfig = {
   border: Border;
   maxWidth: number;
   maxHeight: number;
+  winblend?: number;
 };
 
 export type DocConfig = CommonConfig & {

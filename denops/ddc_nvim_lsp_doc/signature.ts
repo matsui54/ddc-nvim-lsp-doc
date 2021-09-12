@@ -143,6 +143,7 @@ export class SigHelpHandler {
       hl: info.hl,
       maxWidth: maxWidth,
       maxHeight: maxHeight,
+      blend: config.winblend,
     });
   }
 }
