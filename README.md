@@ -8,6 +8,7 @@ https://user-images.githubusercontent.com/63794197/132715049-a82dfc9f-df2d-49d8-
 - Completion documentation
   - lsp information
   - vsnip snippets
+  - ultisnips snippets
   - `info` data of Vim completion item
 
 If you want to add integration of other plugins, please create issue and let me know.

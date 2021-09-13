@@ -28,6 +28,13 @@ export type VsnipData = {
   };
 };
 
+export type UltisnipsData = {
+  ultisnips: {
+    location: string,
+    description: string,
+  }
+}
+
 export type CompletionItem = {
   detail?: string;
   documentation?: string | MarkupContent;

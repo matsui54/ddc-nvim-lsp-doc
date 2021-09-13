@@ -112,6 +112,11 @@ supportVsnip				*ddc-nvim-lsp-doc-option-supporVsnip*
 		(Only in documentation)
 		(default: v:true)
 
+supportUltisnips 		*ddc-nvim-lsp-doc-option-supporUltisnips*
+		If it is true, ultisnips' snippets preview is shown.
+		(Only in documentation)
+		(default: v:true)
+
 supportInfo				*ddc-nvim-lsp-doc-option-supportInfo*
 		If it is true, preview of "info" field of |complete-items| is
 		enabled.

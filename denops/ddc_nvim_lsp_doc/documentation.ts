@@ -7,10 +7,28 @@ import {
   JsonUserData,
   MarkupContent,
   PopupPos,
+  UltisnipsData,
   VimCompleteItem,
 } from "./types.ts";
 import { trimLines } from "./util.ts";
 import { DocConfig } from "./config.ts";
+
+function getUltisnipsSnippets(
+  item: UltisnipsData,
+): string[] | null {
+  const [filePath, lineNr] = item.ultisnips.location.split(":");
+
+  const lines = Deno.readTextFileSync(filePath).split("\n");
+  let text: string[] = [];
+  for (const line of lines.slice(Number(lineNr))) {
+    if (line === "endsnippet" || line.search(/^snippet\s\S+/) != -1) {
+      break;
+    }
+    text = text.concat(line);
+  }
+  if (!text.length) return null;
+  return text;
+}
 
 export class DocHandler {
   private float = new Float();
@@ -133,6 +151,19 @@ export class DocHandler {
         await op.filetype.getLocal(denops),
         config,
       );
+      return;
+    }
+
+    if (config.supportUltisnips && "ultisnips" in decoded) {
+      const texts = getUltisnipsSnippets(decoded);
+      if (texts) {
+        this.showFloating(
+          denops,
+          texts,
+          await op.filetype.getLocal(denops),
+          config,
+        );
+      }
       return;
     }
 
