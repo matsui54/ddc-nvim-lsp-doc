@@ -5,12 +5,10 @@ import {
   CompletionItem,
   FloatOption,
   JsonUserData,
-  MarkupContent,
   PopupPos,
   UltisnipsData,
   VimCompleteItem,
 } from "./types.ts";
-import { trimLines } from "./util.ts";
 import { DocConfig } from "./config.ts";
 import { convertInputToMarkdownLines } from "./markdown.ts";
 
@@ -64,14 +62,14 @@ export class DocHandler {
     config: DocConfig,
   ): Promise<void> {
     if (config.supportInfo && item.info && item.info.length) {
-      this.showFloating(
+      await this.showFloating(
         denops,
         item.info.split("\n"),
         "plaintext",
         config,
       );
     } else {
-      this.closeWin(denops);
+      await this.closeWin(denops);
     }
   }
 
@@ -175,7 +173,7 @@ export class DocHandler {
       await denops.eval("&lines") as number - pumInfo.row,
       config.maxHeight,
     );
-    let floatingOpt: FloatOption = {
+    const floatingOpt: FloatOption = {
       relative: "editor",
       anchor: "NW",
       style: "minimal",
@@ -224,6 +222,6 @@ export class DocHandler {
   }
 
   async closeWin(denops: Denops) {
-    this.float.closeWin(denops);
+    await this.float.closeWin(denops);
   }
 }

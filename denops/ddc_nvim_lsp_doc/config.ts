@@ -20,7 +20,7 @@ export type DocConfig = CommonConfig & {
   delay: number;
 };
 
-export type SignatureConfig = CommonConfig & {};
+export type SignatureConfig = CommonConfig;
 
 export function getDefaultDocConfig(): DocConfig {
   return {

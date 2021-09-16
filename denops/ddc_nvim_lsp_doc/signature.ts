@@ -51,7 +51,7 @@ export class SigHelpHandler {
   }
 
   async requestSighelp(denops: Denops, triggers: string[]) {
-    denops.call(
+    await denops.call(
       "luaeval",
       "require('ddc_nvim_lsp_doc.helper').get_signature_help(_A.arg)",
       { arg: { triggers: triggers } },
@@ -59,7 +59,7 @@ export class SigHelpHandler {
   }
 
   async closeWin(denops: Denops) {
-    this.float.closeWin(denops);
+    await this.float.closeWin(denops);
   }
 
   private isSameSignature(item: SignatureHelp) {
@@ -126,7 +126,7 @@ export class SigHelpHandler {
       config.maxHeight,
     );
     const col = await this.calcWinPos(denops, info);
-    let floatingOpt: FloatOption = {
+    const floatingOpt: FloatOption = {
       relative: "cursor",
       anchor: "SW",
       style: "minimal",

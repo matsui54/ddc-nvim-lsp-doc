@@ -8,20 +8,20 @@ export async function main(denops: Denops) {
 
   denops.dispatcher = {
     async enable(_): Promise<void> {
-      registerAutocmd(denops);
+      await registerAutocmd(denops);
     },
 
     async onEvent(arg1: unknown): Promise<void> {
       const event = arg1 as autocmd.AutocmdEvent;
-      handler.onEvent(denops, event);
+      await handler.onEvent(denops, event);
     },
 
     async respond(arg1: unknown, arg2: unknown): Promise<void> {
       const type = arg1 as ResponceType;
       if (type == "doc") {
-        handler.onDocResponce(denops, arg2 as DocResponce);
+        await handler.onDocResponce(denops, arg2 as DocResponce);
       } else {
-        handler.onSighelpResponce(denops, arg2 as SighelpResponce);
+        await handler.onSighelpResponce(denops, arg2 as SighelpResponce);
       }
     },
   };

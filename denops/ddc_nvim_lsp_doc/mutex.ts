@@ -5,9 +5,9 @@ type Resolver = (id: string | null) => void;
  * This is besed on https://deno.land/x/await_mutex@v1.0.1
  */
 export default class Mutex {
-  private acquired: boolean = false;
+  private acquired = false;
   private waitingResolver: Resolver = () => {};
-  private isWaiting: boolean = false;
+  private isWaiting = false;
   private currentLockHolderId: string | null = null;
 
   /**

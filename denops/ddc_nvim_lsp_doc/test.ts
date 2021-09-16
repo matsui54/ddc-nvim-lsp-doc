@@ -47,7 +47,7 @@ Deno.test({
     if (!id1) {
       throw Error("id from acqire() is null");
     }
-    setTimeout(async () => {
+    setTimeout(() => {
       mutex.release(id1);
     }, 1000);
     const id2 = mutex.acquire();

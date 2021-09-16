@@ -32,7 +32,7 @@ export class EventHandler {
   private config: Config = {} as Config;
   private sighelpHandler = new SigHelpHandler();
   private docHandler = new DocHandler();
-  private docTimer: number = 0;
+  private docTimer = 0;
   private capabilities = {} as ServerCapabilities;
 
   private async getCapabilities(denops: Denops) {
@@ -42,11 +42,11 @@ export class EventHandler {
     ) as ServerCapabilities;
   }
 
-  private async onCompleteChanged(denops: Denops): Promise<void> {
+  private onCompleteChanged(denops: Denops): void {
     // debounce
     clearTimeout(this.docTimer);
     this.docTimer = setTimeout(async () => {
-      this.docHandler.showCompleteDoc(denops, this.config.documentation);
+      await this.docHandler.showCompleteDoc(denops, this.config.documentation);
     }, this.config.documentation.delay);
   }
 
@@ -113,10 +113,18 @@ export class EventHandler {
   }
 
   async onDocResponce(denops: Denops, arg: DocResponce) {
-    this.docHandler.showLspDoc(denops, arg.item, this.config.documentation);
+    await this.docHandler.showLspDoc(
+      denops,
+      arg.item,
+      this.config.documentation,
+    );
   }
 
   async onSighelpResponce(denops: Denops, arg: SighelpResponce) {
-    this.sighelpHandler.showSignatureHelp(denops, arg, this.config.signature);
+    await this.sighelpHandler.showSignatureHelp(
+      denops,
+      arg,
+      this.config.signature,
+    );
   }
 }

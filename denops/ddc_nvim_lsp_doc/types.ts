@@ -5,7 +5,7 @@ export type VimCompleteItem = {
   menu?: string;
   info?: string;
   kind?: string;
-  user_data?: unknown;
+  "user_data"?: unknown;
 };
 
 export type CompleteInfo = {
