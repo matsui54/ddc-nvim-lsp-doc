@@ -12,6 +12,7 @@ import {
 } from "./types.ts";
 import { trimLines } from "./util.ts";
 import { DocConfig } from "./config.ts";
+import { convertInputToMarkdownLines } from "./markdown.ts";
 
 function getUltisnipsSnippets(
   item: UltisnipsData,
@@ -38,42 +39,21 @@ export class DocHandler {
     denops: Denops,
     item: CompletionItem,
   ): Promise<[string[], string] | null> {
-    let detail = "";
-    let syntax: string = "markdown";
+    let lines: string[] = [];
     if (item.detail) {
-      detail = item.detail;
+      lines = convertInputToMarkdownLines({
+        language: await op.filetype.getLocal(denops),
+        value: item.detail,
+      }, []);
     }
-    let arg: string | MarkupContent;
     if (item.documentation) {
-      const doc = item.documentation;
-      if (typeof doc == "string") {
-        arg = detail + (detail.length && doc.length ? "\n---\n" : "") + doc;
-        syntax = "";
-      } else {
-        arg = {
-          kind: syntax,
-          value: detail + (detail.length && doc.value.length ? "\n---\n" : "") +
-            doc.value,
-        } as MarkupContent;
-        syntax = doc.kind;
-      }
-    } else if (detail.length) {
-      arg = detail;
-    } else {
-      return null;
+      lines = convertInputToMarkdownLines(item.documentation, lines);
     }
 
-    const lines = trimLines(
-      await denops.call(
-        "luaeval",
-        "vim.lsp.util.convert_input_to_markdown_lines(_A.arg)",
-        { arg: arg },
-      ) as string[],
-    );
     if (!lines.length) {
       return null;
     }
-    return [lines, syntax];
+    return [lines, "markdown"];
   }
 
   private async showInfoField(
