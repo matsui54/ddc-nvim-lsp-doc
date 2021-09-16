@@ -47,7 +47,9 @@ export class DocHandler {
       }, []);
     }
     if (item.documentation) {
-      lines = convertInputToMarkdownLines(item.documentation, lines);
+      const docLines = convertInputToMarkdownLines(item.documentation, []);
+      if (lines.length && docLines.length) lines.push("---");
+      lines = lines.concat(docLines);
     }
 
     if (!lines.length) {

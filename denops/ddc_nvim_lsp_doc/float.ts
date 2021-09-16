@@ -97,8 +97,8 @@ export class Float {
           buf: floatBufnr,
           line: opts.lines,
           opts: {
-            max_height: opts.maxWidth,
-            max_width: opts.maxHeight,
+            max_height: opts.maxHeight,
+            max_width: opts.maxWidth,
           },
         },
       ) as string[];
