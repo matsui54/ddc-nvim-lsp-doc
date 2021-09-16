@@ -59,6 +59,10 @@ export class EventHandler {
     }
   }
 
+  private async onInsertLeave(denops: Denops): Promise<void> {
+    await this.sighelpHandler.closeWin(denops);
+  }
+
   private async onTextChanged(denops: Denops): Promise<void> {
     if (
       !this.config.signature.enable ||
@@ -94,6 +98,8 @@ export class EventHandler {
   async onEvent(denops: Denops, event: autocmd.AutocmdEvent): Promise<void> {
     if (event == "InsertEnter") {
       this.onInsertEnter(denops);
+    } else if (event == "InsertLeave") {
+      this.onInsertLeave(denops);
     } else {
       if (!this.capabilities) {
         await this.getCapabilities(denops);
