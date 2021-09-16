@@ -30,10 +30,10 @@ export type VsnipData = {
 
 export type UltisnipsData = {
   ultisnips: {
-    location: string,
-    description: string,
-  }
-}
+    location: string;
+    description: string;
+  };
+};
 
 export type CompletionItem = {
   detail?: string;
@@ -81,33 +81,33 @@ export type FloatOption = {
 
 export type SignatureHelp = {
   /**
-	 * One or more signatures. If no signatures are available the signature help
-	 * request should return `null`.
-	 */
+   * One or more signatures. If no signatures are available the signature help
+   * request should return `null`.
+   */
   signatures: SignatureInformation[];
 
   /**
-	 * The active signature. If omitted or the value lies outside the
-	 * range of `signatures` the value defaults to zero or is ignore if
-	 * the `SignatureHelp` as no signatures.
-	 *
-	 * Whenever possible implementors should make an active decision about
-	 * the active signature and shouldn't rely on a default value.
-	 *
-	 * In future version of the protocol this property might become
-	 * mandatory to better express this.
-	 */
+   * The active signature. If omitted or the value lies outside the
+   * range of `signatures` the value defaults to zero or is ignore if
+   * the `SignatureHelp` as no signatures.
+   *
+   * Whenever possible implementors should make an active decision about
+   * the active signature and shouldn't rely on a default value.
+   *
+   * In future version of the protocol this property might become
+   * mandatory to better express this.
+   */
   activeSignature?: number;
 
   /**
-	 * The active parameter of the active signature. If omitted or the value
-	 * lies outside the range of `signatures[activeSignature].parameters`
-	 * defaults to 0 if the active signature has parameters. If
-	 * the active signature has no parameters it is ignored.
-	 * In future version of the protocol this property might become
-	 * mandatory to better express the active parameter if the
-	 * active signature does have any.
-	 */
+   * The active parameter of the active signature. If omitted or the value
+   * lies outside the range of `signatures[activeSignature].parameters`
+   * defaults to 0 if the active signature has parameters. If
+   * the active signature has no parameters it is ignored.
+   * In future version of the protocol this property might become
+   * mandatory to better express the active parameter if the
+   * active signature does have any.
+   */
   activeParameter?: number;
 };
 /**
@@ -117,29 +117,29 @@ export type SignatureHelp = {
  */
 export interface SignatureInformation {
   /**
-	 * The label of this signature. Will be shown in
-	 * the UI.
-	 */
+   * The label of this signature. Will be shown in
+   * the UI.
+   */
   label: string;
 
   /**
-	 * The human-readable doc-comment of this signature. Will be shown
-	 * in the UI but can be omitted.
-	 */
+   * The human-readable doc-comment of this signature. Will be shown
+   * in the UI but can be omitted.
+   */
   documentation?: string | MarkupContent;
 
   /**
-	 * The parameters of this signature.
-	 */
+   * The parameters of this signature.
+   */
   parameters?: ParameterInformation[];
 
   /**
-	 * The index of the active parameter.
-	 *
-	 * If provided, this is used in place of `SignatureHelp.activeParameter`.
-	 *
-	 * @since 3.16.0
-	 */
+   * The index of the active parameter.
+   *
+   * If provided, this is used in place of `SignatureHelp.activeParameter`.
+   *
+   * @since 3.16.0
+   */
   activeParameter?: number;
 }
 /**
@@ -148,23 +148,23 @@ export interface SignatureInformation {
  */
 export interface ParameterInformation {
   /**
-	 * The label of this parameter information.
-	 *
-	 * Either a string or an inclusive start and exclusive end offsets within
-	 * its containing signature label. (see SignatureInformation.label). The
-	 * offsets are based on a UTF-16 string representation as `Position` and
-	 * `Range` does.
-	 *
-	 * *Note*: a label of type string should be a substring of its containing
-	 * signature label. Its intended use case is to highlight the parameter
-	 * label part in the `SignatureInformation.label`.
-	 */
+   * The label of this parameter information.
+   *
+   * Either a string or an inclusive start and exclusive end offsets within
+   * its containing signature label. (see SignatureInformation.label). The
+   * offsets are based on a UTF-16 string representation as `Position` and
+   * `Range` does.
+   *
+   * *Note*: a label of type string should be a substring of its containing
+   * signature label. Its intended use case is to highlight the parameter
+   * label part in the `SignatureInformation.label`.
+   */
   label: string | [number, number];
 
   /**
-	 * The human-readable doc-comment of this parameter. Will be shown
-	 * in the UI but can be omitted.
-	 */
+   * The human-readable doc-comment of this parameter. Will be shown
+   * in the UI but can be omitted.
+   */
   documentation?: string | MarkupContent;
 }
 

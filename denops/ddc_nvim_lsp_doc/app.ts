@@ -36,6 +36,7 @@ export async function main(denops: Denops) {
           const event of [
             "CompleteChanged",
             "InsertEnter",
+            "InsertLeave",
             "TextChangedI",
             "TextChangedP",
           ] as autocmd.AutocmdEvent[]
@@ -43,7 +44,9 @@ export async function main(denops: Denops) {
           helper.define(
             event,
             "*",
-            `call denops#notify('${denops.name}', 'onEvent',["${event}"])`,
+            "if denops#server#status() ==# 'running' | " +
+              `call denops#notify('${denops.name}', 'onEvent',["${event}"])` +
+              " | endif",
           );
         }
       },
