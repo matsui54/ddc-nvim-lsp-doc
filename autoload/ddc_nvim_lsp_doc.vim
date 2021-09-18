@@ -2,17 +2,16 @@ let s:root_dir = fnamemodify(expand('<sfile>'), ':h:h')
 let s:is_enabled = 0
 
 function! ddc_nvim_lsp_doc#enable() abort
-  let s:is_enabled = 1
-  if exists('g:ddc_nvim_lsp_doc#_initialized')
-    call denops#notify('ddc_nvim_lsp_doc', 'enable', [])
+  if denops#plugin#is_loaded('ddc_nvim_lsp_doc')
     return
   endif
+  let s:is_enabled = 1
 
   augroup ddcNvimLspDoc
     autocmd!
   augroup END
 
-  if exists('g:loaded_denops')
+  if exists('g:loaded_denops') && denops#server#status() ==# 'running'
     silent! call s:register()
   else
     autocmd ddcNvimLspDoc User DenopsReady silent! call s:register()
@@ -33,4 +32,16 @@ endfunction
 
 function! ddc_nvim_lsp_doc#is_enabled() abort
   return s:is_enabled
+endfunction
+
+function! s:denops_running() abort
+  return exists('g:loaded_denops')
+        \ && denops#server#status() ==# 'running'
+        \ && denops#plugin#is_loaded('ddc')
+endfunction
+
+function! ddc_nvim_lsp_doc#notify(method, arg) abort
+  if s:denops_running()
+    call denops#notify('ddc_nvim_lsp_doc', a:method, a:arg)
+  endif
 endfunction

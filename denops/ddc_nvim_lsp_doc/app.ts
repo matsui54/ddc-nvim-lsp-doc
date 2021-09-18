@@ -44,9 +44,7 @@ export async function main(denops: Denops) {
           helper.define(
             event,
             "*",
-            "if denops#server#status() ==# 'running' | " +
-              `call denops#notify('${denops.name}', 'onEvent',["${event}"])` +
-              " | endif",
+            `call ddc_nvim_lsp_doc#notify('onEvent', ["${event}"])`,
           );
         }
       },
