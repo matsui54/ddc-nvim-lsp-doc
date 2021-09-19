@@ -8,8 +8,7 @@ local is_new_handler = function(arg)
 end
 
 local respond = function(type, item)
-  api.nvim_call_function('denops#notify', {'ddc_nvim_lsp_doc', 'respond', {type, item}})
-            -- `call denops#notify('${denops.name}', 'onEvent',["${event}"])`,
+  api.nvim_call_function('ddc_nvim_lsp_doc#notify', {'respond', {type, item}})
 end
 
 local get_resolved_item = function(arg)
