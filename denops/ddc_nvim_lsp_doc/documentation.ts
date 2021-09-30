@@ -12,6 +12,13 @@ import {
 import { DocConfig } from "./config.ts";
 import { convertInputToMarkdownLines } from "./markdown.ts";
 
+function stylizeSnippet(lines: string[]): string[] {
+  lines = lines.flatMap((line) => line.split("\n"));
+  return lines.map((line) =>
+    line.replace(/\${(\d:)?(\w+)}/g, "$2").replace(/\$(\d)+/g, "$1")
+  );
+}
+
 function getUltisnipsSnippets(
   item: UltisnipsData,
 ): string[] | null {
@@ -26,7 +33,7 @@ function getUltisnipsSnippets(
     text = text.concat(line);
   }
   if (!text.length) return null;
-  return text;
+  return stylizeSnippet(text);
 }
 
 export class DocHandler {
@@ -84,7 +91,9 @@ export class DocHandler {
     }
     let decoded: JsonUserData = null;
     if (isLike({ lspitem: "" }, item.user_data)) {
-      decoded = { lspitem: JSON.parse(item.user_data.lspitem) as CompletionItem };
+      decoded = {
+        lspitem: JSON.parse(item.user_data.lspitem) as CompletionItem,
+      };
     } else if (typeof item.user_data == "string") {
       try {
         decoded = JSON.parse(item.user_data) as JsonUserData;
@@ -129,7 +138,7 @@ export class DocHandler {
     if (config.supportVsnip && "vsnip" in decoded) {
       this.showFloating(
         denops,
-        decoded.vsnip.snippet,
+        stylizeSnippet(decoded.vsnip.snippet),
         await op.filetype.getLocal(denops),
         config,
       );
