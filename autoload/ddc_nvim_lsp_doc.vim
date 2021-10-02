@@ -37,7 +37,7 @@ endfunction
 function! s:denops_running() abort
   return exists('g:loaded_denops')
         \ && denops#server#status() ==# 'running'
-        \ && denops#plugin#is_loaded('ddc')
+        \ && denops#plugin#is_loaded('ddc_nvim_lsp_doc')
 endfunction
 
 function! ddc_nvim_lsp_doc#notify(method, arg) abort
