@@ -1,6 +1,7 @@
 # ddc-nvim-lsp-doc
 Shows completion documentation and signature help from nvim-lsp.
 
+If you use Vim or [pum.vim](https://github.com/Shougo/pum.vim), use [denops-popup-preview.vim](https://github.com/matsui54/denops-popup-preview.vim) instead.
 
 https://user-images.githubusercontent.com/63794197/132715049-a82dfc9f-df2d-49d8-934f-a59cd9e96fea.mp4
 
