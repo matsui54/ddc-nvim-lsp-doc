@@ -130,7 +130,7 @@ export class SigHelpHandler {
       relative: "cursor",
       anchor: "SW",
       style: "minimal",
-      row: -2,
+      row: 0,
       col: col - 1,
       border: config.border,
     };
