@@ -52,6 +52,9 @@ export class EventHandler {
 
   private async onInsertEnter(denops: Denops): Promise<void> {
     await this.getConfig(denops);
+    if (!this.config.signature.enable) {
+      return;
+    }
     this.sighelpHandler.onInsertEnter();
     await this.getCapabilities(denops);
     if (this.capabilities && this.capabilities.signatureHelpProvider) {
