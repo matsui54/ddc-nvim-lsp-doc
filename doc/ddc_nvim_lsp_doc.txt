@@ -39,25 +39,6 @@ Use your favorite plugin manager.
 INTERFACE					*ddc-nvim-lsp-doc-interface*
 
 ------------------------------------------------------------------------------
-VARIABLES 					*ddc-nvim-lsp-doc-variables*
-
-g:ddc_nvim_lsp_doc#enable_signaturehelp
-*g:ddc_nvim_lsp_doc#enable_signaturehelp*
-		If the value of this variable is non-zero,
-		|ddc-nvim-lsp-doc| automatically shows signature help in
-		insert mode.
-
-		Default: 1
-
-g:ddc_nvim_lsp_doc#enable_documentation
-*g:ddc_nvim_lsp_doc#enable_documentation*
-		If the value of this variable is non-zero,
-		|ddc-nvim-lsp-doc| automatically shows complete documentation
-		on |CompleteChanged|.
-
-		Default: 1
-
-------------------------------------------------------------------------------
 FUNCTIONS 					*ddc-nvim-lsp-doc-functions*
 
 ddc_nvim_lsp_doc#enable()			*ddc_nvim_lsp_doc#enable()*
