@@ -95,9 +95,13 @@ export class SigHelpHandler {
 
   async showSignatureHelp(
     denops: Denops,
-    info: SighelpResponce,
+    info: SighelpResponce | null,
     config: SignatureConfig,
   ): Promise<void> {
+    if (!info) {
+      this.closeWin(denops);
+      return;
+    }
     info.lines = trimLines(info.lines);
     const mode = await fn.mode(denops);
     // if allow select mode, vsnip's jump becomes unavailable

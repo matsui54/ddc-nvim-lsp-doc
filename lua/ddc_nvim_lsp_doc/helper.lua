@@ -31,7 +31,7 @@ local get_signature_help = function(arg)
       local converted, hl = vim.lsp.util.convert_signature_help_to_markdown_lines(res, ft)
       respond("sighelp", {help = res, lines = converted, hl = hl, triggers = arg.triggers})
     else
-      respond("sighelp", {help = res})
+      respond("sighelp", {nil})
     end
   end)
 end
